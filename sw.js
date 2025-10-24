@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'alfred-v1.1.2';
+const CACHE_VERSION = 'alfred-v1.1.3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -43,8 +43,15 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Network-first for API calls (N8N webhook)
-  if (request.method === 'POST' || url.pathname.includes('/api/') || url.hostname.includes('n8n')) {
+  // BYPASS Service Worker para N8N no iOS (bug conhecido do Safari)
+  // Deixa o browser fazer fetch diretamente
+  if (request.method === 'POST' && url.hostname.includes('n8n')) {
+    // Não intercepta - deixa passar direto
+    return;
+  }
+
+  // Network-first para outras APIs
+  if (url.pathname.includes('/api/')) {
     event.respondWith(networkFirst(request));
     return;
   }
