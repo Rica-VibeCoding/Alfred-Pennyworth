@@ -10,8 +10,14 @@ Todas as mudanças notáveis neste projeto serão documentadas aqui.
   - Retorna erro JSON estruturado ao invés de exception
   - Melhora experiência durante desenvolvimento local
 
-### 🔧 Nota
-- **CORS no N8N**: Configure header `Access-Control-Allow-Origin: *` no webhook N8N para resolver completamente
+### 🔧 Alterado
+- **URL de produção ativada**: Mudou de `webhook-test/...` para `webhook/...`
+- **CORS configurado no N8N**: Allowed Origins com `*` funcionando
+
+### ✅ Status
+- Frontend funcionando em localhost e produção (Vercel)
+- CORS resolvido completamente
+- Erros de console eliminados
 
 ---
 
