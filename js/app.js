@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const VOICE_LABEL_LISTENING = 'Gravando... Clique para parar';
   const VOICE_BUTTON_COOLDOWN = 300;
   const ERROR_AUTODISMISS_DELAY = 5000;
-  const VISUAL_TIMEOUT = 15000; // 15s timeout visual (libera UI mesmo se API não respondeu)
+  const VISUAL_TIMEOUT = 120000; // 2 minutos - N8N pode levar tempo em workflows complexos
 
   const messagesContainer = document.getElementById('messages-container');
   const messageInput = document.getElementById('message-input');
