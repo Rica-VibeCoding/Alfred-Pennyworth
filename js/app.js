@@ -69,15 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // Touch events para mobile (previne problemas de evento)
-    if ('ontouchstart' in window) {
-      sendButton.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        handleSendMessage();
-      }, { passive: false });
-    } else {
-      sendButton.addEventListener('click', handleSendMessage);
-    }
+    // Usar click em mobile também (funciona melhor que touchend)
+    sendButton.addEventListener('click', handleSendMessage);
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
