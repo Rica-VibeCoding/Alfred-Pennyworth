@@ -366,6 +366,7 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 3. **Funcionalidade:** Tem que funcionar, não só parecer bonito
 4. **Simplicidade:** Código limpo, fácil de entender
 5. **Performance:** Rápido é não-negociável
+6. **Relatórios objetivos:** Diagnóstico direto, sem exemplos de código desnecessários
 
 ### O que Ricardo NÃO quer:
 
@@ -374,6 +375,7 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 3. Soluções que dependem de terceiros
 4. Excesso de comentários explicando óbvio
 5. Frameworks sem justificativa
+6. Relatórios verbosos com blocos de código quando não solicitados
 
 ---
 
