@@ -65,6 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Armazena valor atual (iOS Safari fix)
       currentInputValue = messageInput.value;
 
+      console.log('INPUT EVENT:', {
+        currentInputValue,
+        messageInputValue: messageInput.value,
+        length: currentInputValue.length
+      });
+
       messageInput.style.height = 'auto';
       messageInput.style.height = Math.min(messageInput.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
 
@@ -73,12 +79,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // Usa currentInputValue (capturado no evento input) - funciona em iOS
-    sendButton.addEventListener('click', handleSendMessage);
+    // iOS Safari workaround: captura valor IMEDIATAMENTE antes de enviar
+    sendButton.addEventListener('click', (e) => {
+      console.log('BUTTON CLICKED - valores antes de enviar:');
+      console.log('messageInput.value:', messageInput.value);
+      console.log('currentInputValue:', currentInputValue);
+
+      // Última tentativa de capturar valor do input
+      if (messageInput.value && messageInput.value.trim().length > 0) {
+        currentInputValue = messageInput.value;
+        console.log('CAPTURADO valor do input no click:', currentInputValue);
+      }
+
+      handleSendMessage();
+    });
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
+
+        // Captura valor antes de enviar (Enter)
+        if (messageInput.value && messageInput.value.trim().length > 0) {
+          currentInputValue = messageInput.value;
+        }
+
         handleSendMessage();
       }
     });
@@ -89,17 +113,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Usa currentInputValue (armazenado no evento input) para iOS Safari
-    const message = retryMessage || currentInputValue.trim();
+    // Fallback robusto: usa currentInputValue OU messageInput.value (o que tiver conteúdo)
+    let message = retryMessage || currentInputValue.trim() || messageInput.value.trim();
 
-    // Debug para mobile
-    console.log('APP: handleSendMessage chamado', {
-      isRetry: !!retryMessage,
-      message,
-      messageLength: message.length,
-      inputValue: messageInput.value,
-      inputValueLength: messageInput.value.length
-    });
+    // Debug DETALHADO para mobile
+    console.log('=== HANDLE SEND MESSAGE ===');
+    console.log('isRetry:', !!retryMessage);
+    console.log('retryMessage:', retryMessage);
+    console.log('currentInputValue:', currentInputValue);
+    console.log('messageInput.value:', messageInput.value);
+    console.log('message (final):', message);
+    console.log('message length:', message.length);
+    console.log('===========================');
 
     if (!message || message.length === 0) {
       showError('Digite uma mensagem antes de enviar.', true);
