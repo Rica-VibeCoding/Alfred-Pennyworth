@@ -41,7 +41,12 @@
       "Bash(ssh-keygen:*)",
       "Bash(ssh-add:*)",
       "Bash(ssh:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Read(//mnt/c/Users/ricar/Downloads/**)",
+      "Bash(node --version)",
+      "Bash(npm install:*)",
+      "Bash(node generate-icons-cli.js:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

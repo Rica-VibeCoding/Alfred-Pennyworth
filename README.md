@@ -273,6 +273,35 @@ vercel env add USER_ID
 - **Envio de mensagens**: Requer conexão (mostra banner de offline)
 - **Service Worker**: Atualiza automaticamente em background
 
+## Tratamento de Erros Avançado
+
+O sistema implementa tratamento robusto de erros para garantir que a interface nunca fique travada:
+
+### Timeout Visual (15 segundos)
+- Se o servidor N8N demorar muito para responder, a interface é liberada automaticamente após 15s
+- Usuário pode continuar enviando novas mensagens
+- Mensagem de erro clara: "Servidor demorou muito para responder."
+
+### Botão "Tentar Novamente"
+- Mensagens de erro exibem botão "↻ Tentar novamente"
+- Um clique reenvia automaticamente a última mensagem que falhou
+- Não precisa digitar novamente ou fechar o app
+
+### Estado Recuperável
+- Após qualquer erro, a interface é imediatamente liberada
+- Usuário pode:
+  - Tentar novamente a mensagem que falhou
+  - Enviar uma nova mensagem diferente
+  - Continuar usando o app normalmente
+- **Nunca** é necessário fechar e abrir o app
+
+### Tipos de Erro Tratados
+- **Timeout**: Servidor não responde em 30s (com 3 retries automáticos)
+- **Offline**: Sem conexão à internet
+- **Erro HTTP**: Status 400, 500, 503, etc
+- **Erro N8N**: Workflow com problema interno
+- **Timeout Visual**: Servidor demora > 15s (libera UI independente do status da API)
+
 ## Troubleshooting
 
 ### PWA não instala no iPhone
@@ -363,13 +392,16 @@ curl -X POST https://seu-n8n.com/webhook/id \
 
 ## Roadmap
 
-### V1 (Atual)
+### V1.1 (Atual - Em Produção)
 
 - ✅ Interface de chat funcional
 - ✅ Envio por texto e voz
 - ✅ Histórico local
 - ✅ PWA completo
-- ✅ Tratamento de erros
+- ✅ Tratamento robusto de erros
+- ✅ Timeout visual (15s) - libera UI mesmo se servidor não responder
+- ✅ Botão "Tentar novamente" em erros
+- ✅ Estado recuperável após erro
 - ✅ Offline UI
 
 ### V2 (Futuro)
@@ -412,6 +444,6 @@ MIT License - Sinta-se livre para usar em seus projetos
 
 ---
 
-**Última atualização**: Outubro 2025
-**Versão**: 1.0.0
-**Status**: ✅ Pronto para produção
+**Última atualização**: Outubro 24, 2025
+**Versão**: 1.1.0
+**Status**: 🚀 **EM PRODUÇÃO**
