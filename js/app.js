@@ -76,9 +76,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       updateSendButtonState();
     });
+
+    // iOS Safari fix: captura valor no blur (quando teclado fecha)
+    messageInput.addEventListener('blur', () => {
+      if (messageInput.value && messageInput.value.trim().length > 0) {
+        currentInputValue = messageInput.value;
+        console.log('BLUR EVENT - valor capturado:', currentInputValue);
+      }
+    });
   }
 
   function initSendButton() {
+    // iOS mobile fix: captura valor ANTES do blur acontecer (touchstart dispara antes de blur)
+    sendButton.addEventListener('touchstart', (e) => {
+      if (messageInput.value && messageInput.value.trim().length > 0) {
+        currentInputValue = messageInput.value;
+        console.log('TOUCHSTART - valor capturado ANTES do blur:', currentInputValue);
+      }
+    }, { passive: true });
+
     // iOS Safari workaround: captura valor IMEDIATAMENTE antes de enviar
     sendButton.addEventListener('click', (e) => {
       console.log('BUTTON CLICKED - valores antes de enviar:');
