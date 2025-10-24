@@ -69,13 +69,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // Usar click em mobile também (funciona melhor que touchend)
-    sendButton.addEventListener('click', handleSendMessage);
+    // Click handler com foco especial para iOS
+    sendButton.addEventListener('click', (e) => {
+      // Force blur no input para garantir que valor foi "committed" (iOS bug)
+      if (messageInput === document.activeElement) {
+        messageInput.blur();
+      }
+
+      // Pequeno delay para iOS processar blur
+      setTimeout(() => {
+        handleSendMessage();
+      }, 50);
+    });
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSendMessage();
+        messageInput.blur(); // Force blur no iOS
+        setTimeout(() => {
+          handleSendMessage();
+        }, 50);
       }
     });
   }
