@@ -18,11 +18,19 @@ const API = (() => {
   async function sendToN8N(message) {
     // Validate message input
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      console.error('API: Mensagem inválida recebida:', {
+        message,
+        type: typeof message,
+        length: message ? message.length : 0
+      });
       return {
         success: false,
-        error: 'Mensagem inválida'
+        error: 'Mensagem vazia. Digite algo antes de enviar.'
       };
     }
+
+    // Sanitize message (remove caracteres invisíveis comuns do mobile)
+    message = message.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
 
     const payload = {
       message: message,

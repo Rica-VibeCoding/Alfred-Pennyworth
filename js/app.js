@@ -69,7 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    sendButton.addEventListener('click', handleSendMessage);
+    // Touch events para mobile (previne problemas de evento)
+    if ('ontouchstart' in window) {
+      sendButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleSendMessage();
+      }, { passive: false });
+    } else {
+      sendButton.addEventListener('click', handleSendMessage);
+    }
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -86,7 +94,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const message = retryMessage || messageInput.value.trim();
 
-    if (!message || message.length > MAX_MESSAGE_LENGTH) {
+    // Debug para mobile
+    console.log('APP: handleSendMessage chamado', {
+      isRetry: !!retryMessage,
+      message,
+      messageLength: message.length,
+      inputValue: messageInput.value,
+      inputValueLength: messageInput.value.length
+    });
+
+    if (!message || message.length === 0) {
+      showError('Digite uma mensagem antes de enviar.', true);
+      return;
+    }
+
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      showError(`Mensagem muito longa (${message.length} caracteres). Máximo: ${MAX_MESSAGE_LENGTH}.`, true);
       return;
     }
 

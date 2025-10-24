@@ -5,19 +5,24 @@ Todas as mudanças notáveis neste projeto serão documentadas aqui.
 ## [1.1.3] - 2025-10-24
 
 ### 🐛 Corrigido
-- **Service Worker CORS handling**: Tratamento silencioso de erros CORS do N8N
+- **Mobile input handling**: Corrigido problema de "Mensagem inválida" no mobile
+  - Touch events ao invés de click (previne problemas de evento)
+  - Sanitização de caracteres invisíveis do mobile
+  - Validação melhorada com feedback específico
+  - Logs de debug para troubleshooting mobile
+
+- **Service Worker iOS Safari**: Bypass de interceptação para N8N
+  - Deixa browser fazer fetch diretamente (contorna bug iOS)
   - Não polui mais console com erros de fetch
-  - Retorna erro JSON estruturado ao invés de exception
-  - Melhora experiência durante desenvolvimento local
 
 ### 🔧 Alterado
 - **URL de produção ativada**: Mudou de `webhook-test/...` para `webhook/...`
 - **CORS configurado no N8N**: Allowed Origins com `*` funcionando
+- **Touch events**: Mobile usa `touchend` ao invés de `click` para resposta instantânea
 
 ### ✅ Status
-- Frontend funcionando em localhost e produção (Vercel)
-- CORS resolvido completamente
-- Erros de console eliminados
+- Desktop funcionando perfeitamente
+- Mobile com correções aplicadas (testar após deploy)
 
 ---
 
