@@ -250,12 +250,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showLoading() {
-    loadingIndicator.style.display = 'flex';
+    if (loadingIndicator) return;
+
+    loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-indicator';
+    loadingIndicator.setAttribute('role', 'status');
+    loadingIndicator.setAttribute('aria-live', 'polite');
+    loadingIndicator.setAttribute('aria-label', 'Processando mensagem');
+
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'loading-dot';
+      loadingIndicator.appendChild(dot);
+    }
+
+    messagesContainer.appendChild(loadingIndicator);
     scrollToBottom();
   }
 
   function hideLoading() {
-    loadingIndicator.style.display = 'none';
+    if (loadingIndicator) {
+      loadingIndicator.remove();
+      loadingIndicator = null;
+    }
   }
 
   function formatTime(date) {
