@@ -68,12 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // iOS Safari fix: previne blur no input ao clicar no botão
-    // Isso mantém messageInput.value disponível no evento click
-    sendButton.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-    });
-
     sendButton.addEventListener('click', (e) => {
       handleSendMessage();
     });
@@ -87,11 +81,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleSendMessage(retryMessage = null) {
+    // Captura valor imediatamente antes de qualquer blur
+    const currentValue = messageInput.value.trim();
+    const message = retryMessage || currentValue;
+
     if (isProcessing) {
       return;
     }
-
-    const message = retryMessage || messageInput.value.trim();
 
     if (!message || message.length === 0) {
       showError('Digite uma mensagem antes de enviar.', true);
