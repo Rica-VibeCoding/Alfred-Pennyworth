@@ -121,6 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
       messageInput.blur(); // Fecha teclado iOS
       messageInput.style.height = 'auto';
       updateSendButtonState();
+
+      // Update sidebar with new message
+      if (typeof Sidebar !== 'undefined' && Sidebar.renderSessions) {
+        Sidebar.renderSessions();
+      }
     }
 
     showLoading();
@@ -159,6 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage(responseText, 'received');
         Storage.saveMessage(responseText, 'assistant', responseType, metadata);
         lastFailedMessage = null; // Limpa retry em caso de sucesso
+
+        // Update sidebar with assistant response
+        if (typeof Sidebar !== 'undefined' && Sidebar.renderSessions) {
+          Sidebar.renderSessions();
+        }
       } else {
         const errorText = `Erro: ${result.error}`;
         addMessageWithRetry(errorText, 'error');
