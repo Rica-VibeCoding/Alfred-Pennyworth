@@ -193,6 +193,31 @@ body {
   color: rgba(255, 255, 255, 0.7);
 }
 
+.retry-button {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-system);
+  color: var(--primary);
+  background: var(--background);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retry-button:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.retry-button:active {
+  transform: scale(0.95);
+}
+
 .loading-indicator {
   display: flex;
   gap: 4px;
@@ -335,6 +360,42 @@ body {
   background: #dc2626;
 }
 
+.voice-button.listening .icon-mic rect:nth-child(1) {
+  animation: waveform 0.8s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.voice-button.listening .icon-mic rect:nth-child(2) {
+  animation: waveform 0.8s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+.voice-button.listening .icon-mic rect:nth-child(3) {
+  animation: waveform 0.8s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.voice-button.listening .icon-mic rect:nth-child(4) {
+  animation: waveform 0.8s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.voice-button.listening .icon-mic rect:nth-child(5) {
+  animation: waveform 0.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+@keyframes waveform {
+  0%, 100% {
+    transform: scaleY(0.5);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
@@ -355,6 +416,14 @@ body {
 .icon-send {
   font-size: 20px;
   filter: brightness(0) invert(1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.icon-mic rect {
+  transform-origin: center;
 }
 
 @media (min-width: 768px) {

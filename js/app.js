@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const VOICE_LABEL_LISTENING = 'Gravando... Clique para parar';
   const VOICE_BUTTON_COOLDOWN = 300;
   const ERROR_AUTODISMISS_DELAY = 5000;
+  const VISUAL_TIMEOUT = 15000; // 15s timeout visual (libera UI mesmo se API não respondeu)
 
   const messagesContainer = document.getElementById('messages-container');
   const messageInput = document.getElementById('message-input');
@@ -44,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let isProcessing = false;
   let voiceButtonCooldown = false;
   let errorTimeout = null;
+  let isConnectionListenerInitialized = false;
+  let visualTimeoutId = null;
+  let lastFailedMessage = null; // Para retry
 
   initAutoResize();
   initSendButton();
@@ -75,12 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function handleSendMessage() {
+  async function handleSendMessage(retryMessage = null) {
     if (isProcessing) {
       return;
     }
 
-    const message = messageInput.value.trim();
+    const message = retryMessage || messageInput.value.trim();
 
     if (!message || message.length > MAX_MESSAGE_LENGTH) {
       return;
@@ -93,41 +97,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     isProcessing = true;
     sendButton.disabled = true;
+    lastFailedMessage = message; // Salva para retry
 
-    addMessage(message, 'sent');
-    Storage.saveMessage(message, 'user');
+    // Só adiciona mensagem se não for retry
+    if (!retryMessage) {
+      addMessage(message, 'sent');
+      Storage.saveMessage(message, 'user');
 
-    messageInput.value = '';
-    messageInput.style.height = 'auto';
-    updateSendButtonState();
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      updateSendButtonState();
+    }
 
     showLoading();
 
+    // Timeout visual de segurança: libera UI após 15s mesmo que API não responda
+    visualTimeoutId = setTimeout(() => {
+      if (isProcessing) {
+        hideLoading();
+        const errorText = 'Servidor demorou muito para responder.';
+        addMessageWithRetry(errorText, 'error');
+        Storage.saveMessage(errorText, 'assistant', 'error');
+        showError(errorText, true);
+
+        isProcessing = false;
+        updateSendButtonState();
+      }
+    }, VISUAL_TIMEOUT);
+
     const result = await API.sendToN8N(message);
 
-    hideLoading();
-
-    if (result.success) {
-      const responseText = result.data.response;
-      const responseType = result.data.type || 'generic';
-      const metadata = result.data.metadata || {};
-
-      addMessage(responseText, 'received');
-      Storage.saveMessage(responseText, 'assistant', responseType, metadata);
-    } else {
-      const errorText = `Erro: ${result.error}`;
-      addMessage(errorText, 'received');
-      Storage.saveMessage(errorText, 'assistant', 'error');
-
-      showError(result.error, true);
+    // Cancela timeout visual se API respondeu antes
+    if (visualTimeoutId) {
+      clearTimeout(visualTimeoutId);
+      visualTimeoutId = null;
     }
 
-    isProcessing = false;
-    updateSendButtonState();
+    // Só processa resposta se ainda estiver em processamento (não foi cancelado pelo timeout)
+    if (isProcessing) {
+      hideLoading();
 
-    setTimeout(() => {
-      messageInput.focus({ preventScroll: true });
-    }, INPUT_FOCUS_DELAY);
+      if (result.success) {
+        const responseText = result.data.response;
+        const responseType = result.data.type || 'generic';
+        const metadata = result.data.metadata || {};
+
+        addMessage(responseText, 'received');
+        Storage.saveMessage(responseText, 'assistant', responseType, metadata);
+        lastFailedMessage = null; // Limpa retry em caso de sucesso
+      } else {
+        const errorText = `Erro: ${result.error}`;
+        addMessageWithRetry(errorText, 'error');
+        Storage.saveMessage(errorText, 'assistant', 'error');
+
+        showError(result.error, true);
+      }
+
+      isProcessing = false;
+      updateSendButtonState();
+
+      setTimeout(() => {
+        messageInput.focus({ preventScroll: true });
+      }, INPUT_FOCUS_DELAY);
+    }
   }
 
   function addMessage(text, type) {
@@ -145,6 +177,38 @@ document.addEventListener('DOMContentLoaded', () => {
     timestamp.textContent = getCurrentTime();
 
     messageDiv.appendChild(bubble);
+    messageDiv.appendChild(timestamp);
+
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+  }
+
+  function addMessageWithRetry(text, type) {
+    updateEmptyState();
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type} received`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.textContent = text || '';
+
+    const retryButton = document.createElement('button');
+    retryButton.className = 'retry-button';
+    retryButton.textContent = '↻ Tentar novamente';
+    retryButton.setAttribute('aria-label', 'Tentar enviar novamente');
+    retryButton.onclick = () => {
+      if (lastFailedMessage && !isProcessing) {
+        handleSendMessage(lastFailedMessage);
+      }
+    };
+
+    const timestamp = document.createElement('div');
+    timestamp.className = 'message-timestamp';
+    timestamp.textContent = getCurrentTime();
+
+    messageDiv.appendChild(bubble);
+    messageDiv.appendChild(retryButton);
     messageDiv.appendChild(timestamp);
 
     messagesContainer.appendChild(messageDiv);
@@ -311,8 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  let isConnectionListenerInitialized = false;
-
   function initConnectionMonitor() {
     if (!connectionStatus) return;
     if (isConnectionListenerInitialized) return;
@@ -361,6 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear error timeout
       if (errorTimeout) {
         clearTimeout(errorTimeout);
+      }
+
+      // Clear visual timeout
+      if (visualTimeoutId) {
+        clearTimeout(visualTimeoutId);
       }
 
       // Clear Service Worker update interval
