@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste Botão</title>
+  <style>
+    body {
+      padding: 40px;
+      font-family: system-ui;
+    }
+    button {
+      width: 100px;
+      height: 100px;
+      font-size: 20px;
+      margin: 20px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Teste Minimalista</h1>
+
+  <button id="btn1" onclick="test1()">
+    Inline
+  </button>
+
+  <button id="btn2">
+    Click
+  </button>
+
+  <button id="btn3">
+    Touch
+  </button>
+
+  <div id="result"></div>
+
+  <script>
+    // Test 1: Inline onclick
+    function test1() {
+      document.getElementById('result').textContent = '✅ Inline funcionou!';
+    }
+
+    // Test 2: addEventListener click
+    document.getElementById('btn2').addEventListener('click', function() {
+      document.getElementById('result').textContent = '✅ Click funcionou!';
+    });
+
+    // Test 3: Touch events
+    const btn3 = document.getElementById('btn3');
+    btn3.addEventListener('touchstart', function() {
+      document.getElementById('result').textContent = '✅ Touch funcionou!';
+    });
+    btn3.addEventListener('click', function() {
+      document.getElementById('result').textContent += ' + Click também!';
+    });
+
+    console.log('Script carregado');
+  </script>
+</body>
+</html>
