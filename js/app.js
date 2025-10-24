@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isConnectionListenerInitialized = false;
   let visualTimeoutId = null;
   let lastFailedMessage = null; // Para retry
+  let currentInputValue = ''; // Armazena valor real do input (iOS Safari fix)
 
   initAutoResize();
   initSendButton();
@@ -61,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initAutoResize() {
     messageInput.addEventListener('input', () => {
+      // Armazena valor atual (iOS Safari fix)
+      currentInputValue = messageInput.value;
+
       messageInput.style.height = 'auto';
       messageInput.style.height = Math.min(messageInput.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
 
@@ -69,26 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // Click handler com foco especial para iOS
-    sendButton.addEventListener('click', (e) => {
-      // Force blur no input para garantir que valor foi "committed" (iOS bug)
-      if (messageInput === document.activeElement) {
-        messageInput.blur();
-      }
-
-      // Pequeno delay para iOS processar blur
-      setTimeout(() => {
-        handleSendMessage();
-      }, 50);
-    });
+    // Usa currentInputValue (capturado no evento input) - funciona em iOS
+    sendButton.addEventListener('click', handleSendMessage);
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        messageInput.blur(); // Force blur no iOS
-        setTimeout(() => {
-          handleSendMessage();
-        }, 50);
+        handleSendMessage();
       }
     });
   }
@@ -98,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const message = retryMessage || messageInput.value.trim();
+    // Usa currentInputValue (armazenado no evento input) para iOS Safari
+    const message = retryMessage || currentInputValue.trim();
 
     // Debug para mobile
     console.log('APP: handleSendMessage chamado', {
@@ -134,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Storage.saveMessage(message, 'user');
 
       messageInput.value = '';
+      currentInputValue = ''; // Limpa valor armazenado também
       messageInput.style.height = 'auto';
       updateSendButtonState();
     }
@@ -245,7 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSendButtonState() {
-    const message = messageInput.value.trim();
+    // Usa currentInputValue para iOS Safari
+    const message = currentInputValue.trim();
     const isValid = message.length > 0 && message.length <= MAX_MESSAGE_LENGTH && !isProcessing;
 
     sendButton.disabled = !isValid;
@@ -356,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         messageInput.value = transcript;
+        currentInputValue = transcript; // Atualiza valor armazenado
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
         updateSendButtonState();
