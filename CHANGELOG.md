@@ -2,6 +2,70 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas aqui.
 
+## [1.1.3] - 2025-10-24
+
+### 🐛 Corrigido
+- **Service Worker CORS handling**: Tratamento silencioso de erros CORS do N8N
+  - Não polui mais console com erros de fetch
+  - Retorna erro JSON estruturado ao invés de exception
+  - Melhora experiência durante desenvolvimento local
+
+### 🔧 Nota
+- **CORS no N8N**: Configure header `Access-Control-Allow-Origin: *` no webhook N8N para resolver completamente
+
+---
+
+## [1.1.2] - 2025-10-24
+
+### 🐛 Corrigido
+- **API retry logic melhorado**: Agora NÃO faz retry quando N8N retorna HTTP 200 com body vazio/inválido
+  - **Antes**: 3 tentativas em resposta vazia (causava 3 webhooks no N8N)
+  - **Agora**: 1 tentativa + erro claro "N8N retornou resposta vazia ou inválida"
+  - Retry apenas acontece em: timeout, erro de rede, ou HTTP 5xx (servidor)
+  - HTTP 4xx (cliente) também NÃO faz retry
+
+### 🔧 Alterado
+- URL de teste atualizada para `webhook-test/...` para facilitar testes
+- Melhor mensagem de erro quando N8N retorna resposta inválida
+- Log de debug (`console.error`) quando resposta tem formato incorreto
+
+### 📚 Documentação
+- Criado `docs/BUG-ANALYSIS.md` - Análise detalhada do problema de 3x webhooks
+- Criado `docs/N8N-WORKFLOW-ANALYSIS.md` - Análise completa do workflow N8N
+- Documentados problemas críticos no N8N:
+  - Respond to Webhook com `responseBody` vazio
+  - Simple Memory com `sessionKey` incorreto (usando message ao invés de userId)
+
+### 🎯 Próximas Correções Necessárias (N8N)
+- **CRÍTICO**: Corrigir Respond to Webhook para retornar JSON válido
+- **CRÍTICO**: Corrigir Simple Memory sessionKey (usar userId, não message)
+- Ver `docs/N8N-WORKFLOW-ANALYSIS.md` para detalhes completos
+
+---
+
+## [1.1.1] - 2025-10-24
+
+### 🔗 Integração N8N
+
+### Adicionado
+- **Normalização Automática de Resposta**: Frontend agora aceita tanto texto puro quanto JSON estruturado do N8N
+- **Detecção de Content-Type**: Analisa `Content-Type` para parsear corretamente (JSON ou texto)
+- **Fallback Inteligente**: Converte texto puro para formato JSON interno automaticamente
+- **Documentação de Integração**: Novo arquivo `docs/N8N-INTEGRATION.md` explicando ambos os formatos
+
+### Melhorado
+- **Compatibilidade Total**: Funciona com N8N atual (texto) e futuro (JSON estruturado)
+- **Preparação V2**: Aceita campos `type` e `metadata` quando disponíveis
+- **Validação Robusta**: Sempre normaliza para formato padrão antes de usar
+
+### Técnico
+- Nova função `normalizeResponse()` em `api.js`
+- Detecta Content-Type: `application/json` vs `text/plain`
+- Suporta formato legado: string pura
+- Suporta formato novo: `{success, response, type, timestamp, metadata}`
+
+---
+
 ## [1.1.0] - 2025-10-24
 
 ### 🚀 EM PRODUÇÃO

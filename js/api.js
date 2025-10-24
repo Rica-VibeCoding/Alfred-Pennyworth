@@ -44,22 +44,54 @@ const API = (() => {
         body: JSON.stringify(payload)
       }, TIMEOUT);
 
+      // Erros HTTP: apenas 5xx devem fazer retry
       if (!response.ok) {
+        const shouldRetry = response.status >= 500;
+
+        if (!shouldRetry) {
+          // 4xx = erro cliente (bad request, not found, etc) - NÃO retry
+          return {
+            success: false,
+            error: `HTTP ${response.status}: ${response.statusText}`
+          };
+        }
+
+        // 5xx = erro servidor - faz retry
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      // Response OK (200-299)
+      // Tenta parsear resposta (pode ser JSON ou texto puro)
+      const contentType = response.headers.get('content-type');
+      let rawData;
 
-      if (!validateResponse(data)) {
-        throw new Error('Invalid response format from N8N');
+      if (contentType && contentType.includes('application/json')) {
+        rawData = await response.json();
+      } else {
+        // Se não for JSON, trata como texto puro
+        rawData = await response.text();
+      }
+
+      // Normaliza resposta para formato padrão
+      const normalizedData = normalizeResponse(rawData);
+
+      // Resposta OK mas formato inválido = erro de configuração (NÃO retry)
+      if (!validateResponse(normalizedData)) {
+        console.error('N8N returned invalid response format:', rawData);
+
+        return {
+          success: false,
+          error: 'N8N retornou resposta vazia ou inválida. Verifique configuração do webhook.'
+        };
       }
 
       return {
         success: true,
-        data: data
+        data: normalizedData
       };
 
     } catch (error) {
+      // Retry apenas para: timeout, erro de rede, ou HTTP 5xx
       if (attempt < MAX_RETRIES - 1) {
         const delay = RETRY_DELAYS[attempt] || 5000;
         await sleep(delay);
@@ -91,6 +123,33 @@ const API = (() => {
       }
       throw error;
     }
+  }
+
+  function normalizeResponse(rawData) {
+    // Se já está no formato esperado (objeto com success, response, etc)
+    if (rawData && typeof rawData === 'object' && rawData.response) {
+      return {
+        success: rawData.success !== false, // Default true se não especificado
+        response: rawData.response,
+        type: rawData.type || 'generic',
+        timestamp: rawData.timestamp || new Date().toISOString(),
+        metadata: rawData.metadata || {}
+      };
+    }
+
+    // Se é texto puro (resposta antiga do N8N)
+    if (typeof rawData === 'string' && rawData.trim().length > 0) {
+      return {
+        success: true,
+        response: rawData.trim(),
+        type: 'generic',
+        timestamp: new Date().toISOString(),
+        metadata: {}
+      };
+    }
+
+    // Formato inválido
+    return null;
   }
 
   function validateResponse(data) {

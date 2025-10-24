@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'alfred-v1.0.1';
+const CACHE_VERSION = 'alfred-v1.1.2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -92,6 +92,18 @@ async function networkFirst(request) {
     const response = await fetch(request);
     return response;
   } catch (error) {
+    // Silently handle CORS errors for N8N webhook (não logar no console)
+    if (request.url.includes('n8n')) {
+      // Retorna erro sem fazer ruído
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Erro de conexão. Verifique CORS no N8N.'
+      }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const cache = await caches.open(STATIC_CACHE);
     const cached = await cache.match(request);
 
