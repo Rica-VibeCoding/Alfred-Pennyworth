@@ -68,33 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initSendButton() {
-    // iOS Safari fix: usa touchstart em vez de mousedown para devices touch
-    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-    if (isTouchDevice) {
-      // Mobile: touchstart captura valor antes de blur
-      let messageToSend = '';
-
-      sendButton.addEventListener('touchstart', (e) => {
-        messageToSend = messageInput.value.trim();
-      });
-
-      sendButton.addEventListener('click', (e) => {
-        if (messageToSend) {
-          handleSendMessage(messageToSend);
-          messageToSend = ''; // Reset
-        }
-      });
-    } else {
-      // Desktop: mantém comportamento original
-      sendButton.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-      });
-
-      sendButton.addEventListener('click', (e) => {
-        handleSendMessage();
-      });
-    }
+    sendButton.addEventListener('click', (e) => {
+      handleSendMessage();
+    });
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
