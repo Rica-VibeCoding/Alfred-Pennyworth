@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let isConnectionListenerInitialized = false;
   let visualTimeoutId = null;
   let lastFailedMessage = null; // Para retry
-  let currentInputValue = ''; // Armazena valor real do input (iOS Safari fix)
 
   initAutoResize();
   initSendButton();
@@ -62,63 +61,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initAutoResize() {
     messageInput.addEventListener('input', () => {
-      // Armazena valor atual (iOS Safari fix)
-      currentInputValue = messageInput.value;
-
-      console.log('INPUT EVENT:', {
-        currentInputValue,
-        messageInputValue: messageInput.value,
-        length: currentInputValue.length
-      });
-
       messageInput.style.height = 'auto';
       messageInput.style.height = Math.min(messageInput.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
-
       updateSendButtonState();
-    });
-
-    // iOS Safari fix: captura valor no blur (quando teclado fecha)
-    messageInput.addEventListener('blur', () => {
-      if (messageInput.value && messageInput.value.trim().length > 0) {
-        currentInputValue = messageInput.value;
-        console.log('BLUR EVENT - valor capturado:', currentInputValue);
-      }
     });
   }
 
   function initSendButton() {
-    // iOS mobile fix: captura valor ANTES do blur acontecer (touchstart dispara antes de blur)
-    sendButton.addEventListener('touchstart', (e) => {
-      if (messageInput.value && messageInput.value.trim().length > 0) {
-        currentInputValue = messageInput.value;
-        console.log('TOUCHSTART - valor capturado ANTES do blur:', currentInputValue);
-      }
-    }, { passive: true });
+    // iOS Safari fix: previne blur no input ao clicar no botão
+    // Isso mantém messageInput.value disponível no evento click
+    sendButton.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+    });
 
-    // iOS Safari workaround: captura valor IMEDIATAMENTE antes de enviar
     sendButton.addEventListener('click', (e) => {
-      console.log('BUTTON CLICKED - valores antes de enviar:');
-      console.log('messageInput.value:', messageInput.value);
-      console.log('currentInputValue:', currentInputValue);
-
-      // Última tentativa de capturar valor do input
-      if (messageInput.value && messageInput.value.trim().length > 0) {
-        currentInputValue = messageInput.value;
-        console.log('CAPTURADO valor do input no click:', currentInputValue);
-      }
-
       handleSendMessage();
     });
 
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-
-        // Captura valor antes de enviar (Enter)
-        if (messageInput.value && messageInput.value.trim().length > 0) {
-          currentInputValue = messageInput.value;
-        }
-
         handleSendMessage();
       }
     });
@@ -129,18 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Fallback robusto: usa currentInputValue OU messageInput.value (o que tiver conteúdo)
-    let message = retryMessage || currentInputValue.trim() || messageInput.value.trim();
-
-    // Debug DETALHADO para mobile
-    console.log('=== HANDLE SEND MESSAGE ===');
-    console.log('isRetry:', !!retryMessage);
-    console.log('retryMessage:', retryMessage);
-    console.log('currentInputValue:', currentInputValue);
-    console.log('messageInput.value:', messageInput.value);
-    console.log('message (final):', message);
-    console.log('message length:', message.length);
-    console.log('===========================');
+    const message = retryMessage || messageInput.value.trim();
 
     if (!message || message.length === 0) {
       showError('Digite uma mensagem antes de enviar.', true);
@@ -167,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Storage.saveMessage(message, 'user');
 
       messageInput.value = '';
-      currentInputValue = ''; // Limpa valor armazenado também
+      messageInput.blur(); // Fecha teclado iOS
       messageInput.style.height = 'auto';
       updateSendButtonState();
     }
@@ -279,8 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSendButtonState() {
-    // Usa currentInputValue para iOS Safari
-    const message = currentInputValue.trim();
+    const message = messageInput.value.trim();
     const isValid = message.length > 0 && message.length <= MAX_MESSAGE_LENGTH && !isProcessing;
 
     sendButton.disabled = !isValid;
@@ -391,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         messageInput.value = transcript;
-        currentInputValue = transcript; // Atualiza valor armazenado
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
         updateSendButtonState();
