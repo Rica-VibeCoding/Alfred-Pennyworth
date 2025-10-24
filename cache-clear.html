@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alfred - Cache Clear</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #2563eb;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    button {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1d4ed8; }
+    button.secondary {
+      background: #6b7280;
+    }
+    button.secondary:hover { background: #4b5563; }
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+      display: block;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      display: block;
+    }
+    .info {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+    .info strong { color: #111827; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 Atualização Alfred</h1>
+    <p>Para aplicar as correções mais recentes, é necessário limpar o cache do navegador.</p>
+
+    <button onclick="clearAllCache()">🗑️ Limpar Cache Completo</button>
+    <button class="secondary" onclick="unregisterSW()">⚙️ Desregistrar Service Worker</button>
+    <button class="secondary" onclick="forceReload()">🔄 Recarregar App</button>
+
+    <div id="status" class="status"></div>
+
+    <div class="info">
+      <strong>O que será limpo:</strong><br>
+      • Service Worker antigo<br>
+      • Cache de arquivos estáticos<br>
+      • LocalStorage (histórico preservado)<br>
+      • Cookies e dados temporários
+    </div>
+  </div>
+
+  <script>
+    async function clearAllCache() {
+      const status = document.getElementById('status');
+
+      try {
+        // Clear all caches
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+
+        // Unregister all service workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(reg => reg.unregister()));
+        }
+
+        status.className = 'status success';
+        status.textContent = '✅ Cache limpo com sucesso! Redirecionando...';
+
+        setTimeout(() => {
+          window.location.href = '/?v=' + Date.now();
+        }, 2000);
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = '❌ Erro: ' + error.message;
+      }
+    }
+
+    async function unregisterSW() {
+      const status = document.getElementById('status');
+
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(reg => reg.unregister()));
+
+          status.className = 'status success';
+          status.textContent = '✅ Service Worker desregistrado!';
+        } else {
+          status.className = 'status error';
+          status.textContent = '❌ Service Worker não suportado';
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = '❌ Erro: ' + error.message;
+      }
+    }
+
+    function forceReload() {
+      window.location.href = '/?v=' + Date.now();
+    }
+
+    // Auto-clear on first load if query param present
+    if (window.location.search.includes('auto=true')) {
+      clearAllCache();
+    }
+  </script>
+</body>
+</html>
