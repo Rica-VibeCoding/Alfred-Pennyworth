@@ -50,10 +50,6 @@ const Sidebar = (() => {
     overlay?.classList.toggle('active');
   }
 
-  function open() {
-    overlay?.classList.add('active');
-  }
-
   function close() {
     overlay?.classList.remove('active');
   }

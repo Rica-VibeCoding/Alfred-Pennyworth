@@ -30,14 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageInput = document.getElementById('message-input');
   const sendButton = document.getElementById('send-button');
   const voiceButton = document.getElementById('voice-button');
-  const loadingIndicator = document.querySelector('.loading-indicator');
+  let loadingIndicator = document.querySelector('.loading-indicator'); // Criado dinamicamente
   const errorBanner = document.getElementById('error-banner');
   const errorMessage = document.getElementById('error-message');
   const errorClose = document.getElementById('error-close');
   const connectionStatus = document.getElementById('connection-status');
   const emptyState = document.getElementById('empty-state');
 
-  if (!messagesContainer || !messageInput || !sendButton || !voiceButton || !loadingIndicator) {
+  if (!messagesContainer || !messageInput || !sendButton || !voiceButton) {
     // Required DOM elements not found - fail silently
     return;
   }

@@ -338,6 +338,7 @@ const Storage = (() => {
     return session ? session.messages : [];
   }
 
+  // Legacy compatibility - wrapper for cleanOldSessions
   function cleanOldMessages() {
     const data = getStorageData();
     cleanOldSessions(data);
@@ -357,6 +358,7 @@ const Storage = (() => {
     }
   }
 
+  // Legacy compatibility - wrapper for getCurrentSessionId
   function getSessionId() {
     return getCurrentSessionId();
   }

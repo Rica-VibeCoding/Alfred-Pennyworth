@@ -71,7 +71,14 @@
       "mcp__n8n-mcp__get_node_essentials",
       "WebFetch(domain:developers.google.com)",
       "mcp__n8n-mcp__list_nodes",
-      "mcp__n8n-mcp__list_ai_tools"
+      "mcp__n8n-mcp__list_ai_tools",
+      "WebFetch(domain:n8n.io)",
+      "Bash(git revert:*)",
+      "Bash(node --check:*)",
+      "Bash(for file in js/*.js)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

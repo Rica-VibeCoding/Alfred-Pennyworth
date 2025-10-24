@@ -1,0 +1,267 @@
+{
+  "name": "Google Drive Operations",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "fileName",
+              "type": "string",
+              "required": true,
+              "description": "Nome do arquivo para buscar no Google Drive"
+            }
+          ]
+        }
+      },
+      "id": "trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "operation": "search",
+        "queryString": "={{ $json.fileName }}",
+        "limit": 5,
+        "options": {}
+      },
+      "id": "search-001",
+      "name": "Search Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [460, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VYUOFzBX1DBa7S0c",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst searchTerm = $('Execute Workflow Trigger').item.json.fileName;\n\n// Nenhum resultado da busca\nif (items.length === 0) {\n  return [{\n    json: {\n      success: false,\n      error: `Nenhum arquivo encontrado com \"${searchTerm}\"`,\n      fileName: searchTerm,\n      foundCount: 0\n    }\n  }];\n}\n\n// Filtrar arquivos que contenham o termo buscado (case-insensitive)\nconst searchLower = searchTerm.toLowerCase();\nconst matchingFiles = items.filter(item => \n  item.json.name.toLowerCase().includes(searchLower)\n);\n\n// Nenhum arquivo corresponde ao filtro\nif (matchingFiles.length === 0) {\n  const foundNames = items.map(i => i.json.name).join(', ');\n  return [{\n    json: {\n      success: false,\n      error: `Busca retornou ${items.length} arquivo(s), mas nenhum contém \"${searchTerm}\" no nome`,\n      fileName: searchTerm,\n      foundCount: items.length,\n      foundFiles: foundNames\n    }\n  }];\n}\n\n// Pega o primeiro arquivo que corresponde\nconst file = matchingFiles[0].json;\n\nreturn [{\n  json: {\n    success: true,\n    fileId: file.id,\n    fileName: file.name,\n    mimeType: file.mimeType,\n    size: file.size || 'unknown',\n    totalMatches: matchingFiles.length\n  }\n}];"
+      },
+      "id": "code-001",
+      "name": "Validate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-001",
+      "name": "File Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Validate Results').item.json.fileId }}"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "id": "download-001",
+      "name": "Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1120, 200],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VYUOFzBX1DBa7S0c",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success-flag",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "file-id",
+              "name": "fileId",
+              "value": "={{ $('Validate Results').item.json.fileId }}",
+              "type": "string"
+            },
+            {
+              "id": "file-name",
+              "name": "fileName",
+              "value": "={{ $('Validate Results').item.json.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "mime-type",
+              "name": "mimeType",
+              "value": "={{ $('Validate Results').item.json.mimeType }}",
+              "type": "string"
+            },
+            {
+              "id": "file-size",
+              "name": "size",
+              "value": "={{ $('Validate Results').item.json.size }}",
+              "type": "string"
+            },
+            {
+              "id": "total-matches",
+              "name": "totalMatches",
+              "value": "={{ $('Validate Results').item.json.totalMatches }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-success-001",
+      "name": "Format Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-flag",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error-message",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            },
+            {
+              "id": "error-filename",
+              "name": "fileName",
+              "value": "={{ $json.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "found-count",
+              "name": "foundCount",
+              "value": "={{ $json.foundCount || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "found-files",
+              "name": "foundFiles",
+              "value": "={{ $json.foundFiles || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-error-001",
+      "name": "Format Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Files": {
+      "main": [
+        [
+          {
+            "node": "Validate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Results": {
+      "main": [
+        [
+          {
+            "node": "File Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Found?": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Format Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-24T20:30:00.000Z",
+  "versionId": "sub-workflow-v1"
+}
