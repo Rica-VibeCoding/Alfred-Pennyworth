@@ -49,9 +49,34 @@
       "Bash(git commit:*)",
       "Bash(git ls-tree:*)",
       "WebFetch(domain:docs.n8n.io)",
-      "WebFetch(domain:community.n8n.io)"
+      "WebFetch(domain:community.n8n.io)",
+      "Bash(git log:*)",
+      "WebFetch(domain:blog.mobiscroll.com)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(N8N_API_URL=\"https://n8n-n8n-editor.neldoo.easypanel.host/\" N8N_API_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ODUwMWYwNy1jMjJmLTQzNDctYmU0Mi0yMGIzYzkzNmZhYjAiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwOTM4MzM1fQ.gd1nK7lXDWZ2eqvwAc2-I39oQjFDfSVO0lcTe2PbvyM\" npx n8n-mcp)",
+      "Bash(python3:*)",
+      "Bash(/dev/null)",
+      "mcp__n8n-mcp__n8n_health_check",
+      "mcp__n8n-mcp__get_database_statistics",
+      "mcp__n8n-mcp__n8n_list_workflows",
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__get_node_documentation",
+      "mcp__n8n-mcp__get_node_info",
+      "mcp__n8n-mcp__search_templates",
+      "Bash(ping:*)",
+      "WebFetch(domain:langchain-ai.github.io)",
+      "mcp__n8n-mcp__search_node_properties",
+      "mcp__n8n-mcp__list_node_templates",
+      "mcp__n8n-mcp__get_node_essentials",
+      "WebFetch(domain:developers.google.com)",
+      "mcp__n8n-mcp__list_nodes",
+      "mcp__n8n-mcp__list_ai_tools"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "n8n-mcp"
+  ]
 }
