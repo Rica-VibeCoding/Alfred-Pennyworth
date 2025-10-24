@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Configuration Test - Alfred</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .pass {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .fail {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    pre {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+    h2 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>PWA Configuration Test - Alfred</h1>
+  <p>Esta página testa a configuração PWA do projeto.</p>
+
+  <div class="test-section">
+    <h2>Service Worker</h2>
+    <div id="sw-status"></div>
+    <pre id="sw-info"></pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Manifest</h2>
+    <div id="manifest-status"></div>
+    <pre id="manifest-info"></pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Meta Tags (iOS)</h2>
+    <div id="meta-status"></div>
+    <pre id="meta-info"></pre>
+  </div>
+
+  <div class="test-section">
+    <h2>HTTPS</h2>
+    <div id="https-status"></div>
+    <pre id="https-info"></pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Installability</h2>
+    <div id="install-status"></div>
+    <pre id="install-info"></pre>
+  </div>
+
+  <script>
+    // Test Service Worker
+    async function testServiceWorker() {
+      const statusDiv = document.getElementById('sw-status');
+      const infoDiv = document.getElementById('sw-info');
+
+      if (!('serviceWorker' in navigator)) {
+        statusDiv.innerHTML = '<span class="status fail">FAIL</span> Service Worker not supported';
+        infoDiv.textContent = 'Browser does not support Service Workers';
+        return;
+      }
+
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          statusDiv.innerHTML = '<span class="status pass">PASS</span> Service Worker registered';
+          infoDiv.textContent = `Scope: ${registration.scope}\nState: ${registration.active ? 'active' : 'pending'}`;
+        } else {
+          statusDiv.innerHTML = '<span class="status warning">WARNING</span> Service Worker not registered yet';
+          infoDiv.textContent = 'Service Worker will register on app load';
+        }
+      } catch (error) {
+        statusDiv.innerHTML = '<span class="status fail">FAIL</span> Error checking Service Worker';
+        infoDiv.textContent = error.message;
+      }
+    }
+
+    // Test Manifest
+    async function testManifest() {
+      const statusDiv = document.getElementById('manifest-status');
+      const infoDiv = document.getElementById('manifest-info');
+
+      const manifestLink = document.querySelector('link[rel="manifest"]');
+      if (!manifestLink) {
+        statusDiv.innerHTML = '<span class="status fail">FAIL</span> No manifest link found';
+        infoDiv.textContent = 'Missing <link rel="manifest"> in HTML';
+        return;
+      }
+
+      try {
+        const response = await fetch(manifestLink.href);
+        const manifest = await response.json();
+
+        const required = ['name', 'short_name', 'start_url', 'display', 'icons'];
+        const missing = required.filter(field => !manifest[field]);
+
+        if (missing.length === 0) {
+          statusDiv.innerHTML = '<span class="status pass">PASS</span> Manifest valid';
+          infoDiv.textContent = JSON.stringify(manifest, null, 2);
+        } else {
+          statusDiv.innerHTML = '<span class="status fail">FAIL</span> Manifest missing fields';
+          infoDiv.textContent = `Missing: ${missing.join(', ')}\n\n${JSON.stringify(manifest, null, 2)}`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = '<span class="status fail">FAIL</span> Error loading manifest';
+        infoDiv.textContent = error.message;
+      }
+    }
+
+    // Test Meta Tags
+    function testMetaTags() {
+      const statusDiv = document.getElementById('meta-status');
+      const infoDiv = document.getElementById('meta-info');
+
+      const tags = {
+        'viewport': document.querySelector('meta[name="viewport"]'),
+        'theme-color': document.querySelector('meta[name="theme-color"]'),
+        'apple-mobile-web-app-capable': document.querySelector('meta[name="apple-mobile-web-app-capable"]'),
+        'apple-mobile-web-app-status-bar-style': document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]'),
+        'apple-touch-icon': document.querySelector('link[rel="apple-touch-icon"]')
+      };
+
+      const found = Object.entries(tags).filter(([_, el]) => el);
+      const missing = Object.entries(tags).filter(([_, el]) => !el).map(([name]) => name);
+
+      const info = found.map(([name, el]) => {
+        const value = el.content || el.href;
+        return `${name}: ${value}`;
+      }).join('\n');
+
+      if (missing.length === 0) {
+        statusDiv.innerHTML = '<span class="status pass">PASS</span> All iOS meta tags present';
+      } else {
+        statusDiv.innerHTML = `<span class="status warning">WARNING</span> Missing: ${missing.join(', ')}`;
+      }
+
+      infoDiv.textContent = info + (missing.length > 0 ? `\n\nMissing: ${missing.join(', ')}` : '');
+    }
+
+    // Test HTTPS
+    function testHTTPS() {
+      const statusDiv = document.getElementById('https-status');
+      const infoDiv = document.getElementById('https-info');
+
+      const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+      if (isSecure) {
+        statusDiv.innerHTML = '<span class="status pass">PASS</span> Secure context';
+        infoDiv.textContent = `Protocol: ${location.protocol}\nHost: ${location.hostname}`;
+      } else {
+        statusDiv.innerHTML = '<span class="status fail">FAIL</span> Not a secure context';
+        infoDiv.textContent = 'PWA requires HTTPS or localhost';
+      }
+    }
+
+    // Test Installability
+    function testInstallability() {
+      const statusDiv = document.getElementById('install-status');
+      const infoDiv = document.getElementById('install-info');
+
+      let installPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        installPrompt = e;
+        statusDiv.innerHTML = '<span class="status pass">PASS</span> App is installable';
+        infoDiv.textContent = 'Install prompt is available\nUser can install the app';
+      });
+
+      setTimeout(() => {
+        if (!installPrompt) {
+          statusDiv.innerHTML = '<span class="status warning">WARNING</span> Install prompt not triggered';
+          infoDiv.textContent = 'This could mean:\n- App is already installed\n- Criteria not met yet\n- iOS Safari (no install prompt API)';
+        }
+      }, 2000);
+
+      // Check if already installed (standalone mode)
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        statusDiv.innerHTML = '<span class="status pass">PASS</span> App is installed';
+        infoDiv.textContent = 'Running in standalone mode';
+      }
+    }
+
+    // Run all tests
+    window.addEventListener('load', () => {
+      testServiceWorker();
+      testManifest();
+      testMetaTags();
+      testHTTPS();
+      testInstallability();
+    });
+  </script>
+</body>
+</html>

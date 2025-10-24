@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Ícones PWA</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .icons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+    }
+    .icon-item {
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      width: 100%;
+      height: auto;
+    }
+    .size-label {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Ícones PWA - Alfred</h1>
+  <p>Clique no botão para gerar e baixar todos os ícones necessários.</p>
+  <button onclick="generateAllIcons()">Gerar e Baixar Todos os Ícones</button>
+
+  <div class="icons-grid" id="iconsGrid"></div>
+
+  <script>
+    const SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
+    const ICON_COLOR = '#2563eb';
+    const TEXT_COLOR = '#ffffff';
+
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+
+      // Draw circle background
+      ctx.fillStyle = ICON_COLOR;
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw letter "A"
+      ctx.fillStyle = TEXT_COLOR;
+      ctx.font = `bold ${size * 0.55}px system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('A', size / 2, size / 2 + size * 0.02);
+    }
+
+    function createIconElement(size) {
+      const div = document.createElement('div');
+      div.className = 'icon-item';
+
+      const canvas = document.createElement('canvas');
+      drawIcon(canvas, size);
+
+      const label = document.createElement('div');
+      label.className = 'size-label';
+      label.textContent = `${size}x${size}`;
+
+      div.appendChild(canvas);
+      div.appendChild(label);
+
+      return { element: div, canvas };
+    }
+
+    function downloadCanvas(canvas, filename) {
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    }
+
+    function generateAllIcons() {
+      const grid = document.getElementById('iconsGrid');
+      grid.innerHTML = '';
+
+      SIZES.forEach((size, index) => {
+        setTimeout(() => {
+          const { element, canvas } = createIconElement(size);
+          grid.appendChild(element);
+
+          // Auto-download after a brief delay
+          setTimeout(() => {
+            downloadCanvas(canvas, `icon-${size}x${size}.png`);
+          }, 100 * (index + 1));
+        }, 50 * index);
+      });
+
+      // Also generate 32x32 and 180x180 for favicon and apple-touch-icon
+      setTimeout(() => {
+        const canvas32 = document.createElement('canvas');
+        drawIcon(canvas32, 32);
+        downloadCanvas(canvas32, 'icon-32x32.png');
+
+        const canvas180 = document.createElement('canvas');
+        drawIcon(canvas180, 180);
+        downloadCanvas(canvas180, 'icon-180x180.png');
+      }, 100 * (SIZES.length + 1));
+    }
+
+    // Generate preview on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('iconsGrid');
+      SIZES.forEach(size => {
+        const { element } = createIconElement(size);
+        grid.appendChild(element);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Alfred - Assistente Pessoal N8N">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- iOS Safari PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Alfred">
+  <meta name="format-detection" content="telephone=no">
+
+  <title>Alfred - Assistente Pessoal</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32x32.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-180x180.png">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="app-container">
+    <div id="error-banner" class="error-banner" style="display: none;" role="alert">
+      <span id="error-message" class="error-message"></span>
+      <button id="error-close" class="error-close" aria-label="Fechar erro">✕</button>
+    </div>
+
+    <header class="header">
+      <h1>Alfred</h1>
+      <div id="connection-status" class="connection-status" style="display: none;">
+        <span class="status-dot"></span>
+        <span class="status-text">Offline</span>
+      </div>
+    </header>
+
+    <main class="messages-container" id="messages-container" role="log" aria-live="polite" aria-atomic="false">
+      <div id="empty-state" class="empty-state">
+        <div class="empty-state-text">Olá Ricardo, como posso ajudar?</div>
+        <div class="empty-state-subtext">Digite ou fale sua mensagem</div>
+      </div>
+
+      <div class="loading-indicator" style="display: none;" role="status" aria-live="polite" aria-label="Processando mensagem">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+    </main>
+
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea
+          id="message-input"
+          class="message-input"
+          placeholder="Digite sua mensagem..."
+          rows="1"
+          maxlength="2000"
+          aria-label="Digite sua mensagem"
+          data-autoresize
+        ></textarea>
+        <button
+          id="voice-button"
+          class="voice-button"
+          aria-label="Gravar áudio"
+          type="button"
+        >
+          <span class="icon-mic">🎤</span>
+        </button>
+        <button
+          id="send-button"
+          class="send-button"
+          aria-label="Enviar mensagem"
+          type="button"
+          disabled
+        >
+          <span class="icon-send">➤</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
