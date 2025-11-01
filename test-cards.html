@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste Cards - Alfred</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <style>
+    body {
+      background: var(--background);
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+    h2 {
+      font-size: 16px;
+      margin: 30px 0 10px 0;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Teste de Cards - Formato Inline</h1>
+
+    <h2>Card Email (Não lido)</h2>
+    <div class="card card-email">
+      <div class="card-header">
+        <span class="card-icon">📧</span>
+        <h3 class="card-title">Proposta Móveis</h3>
+        <span class="card-badge unread">Não lido</span>
+      </div>
+      <div class="card-body">
+        <div class="card-field">
+          <span class="card-field-label">De:</span> João Silva &lt;joao@example.com&gt;
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Assunto:</span> Proposta Móveis Customizados
+        </div>
+        <div class="card-field preview">
+          <span class="card-field-label">Preview:</span>
+          <span class="card-field-value">Segue proposta conforme conversamos na reunião de ontem. Aguardo retorno sobre valores e prazos de entrega.</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>Hoje, 14:30</span>
+      </div>
+    </div>
+
+    <h2>Card Email (Lido)</h2>
+    <div class="card card-email">
+      <div class="card-header">
+        <span class="card-icon">📧</span>
+        <h3 class="card-title">RE: Orçamento Cozinha</h3>
+        <span class="card-badge read">Lido</span>
+      </div>
+      <div class="card-body">
+        <div class="card-field">
+          <span class="card-field-label">De:</span> Maria Santos &lt;maria@cliente.com&gt;
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Assunto:</span> RE: Orçamento Cozinha Planejada
+        </div>
+        <div class="card-field preview">
+          <span class="card-field-label">Preview:</span>
+          <span class="card-field-value">Obrigada pelo orçamento. Podemos marcar uma reunião?</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>Ontem, 16:45</span>
+      </div>
+    </div>
+
+    <h2>Card Evento</h2>
+    <div class="card card-evento">
+      <div class="card-header">
+        <span class="card-icon">📅</span>
+        <h3 class="card-title">Reunião Cliente Movelmar</h3>
+      </div>
+      <div class="card-body">
+        <div class="card-time">
+          <span>🕐</span>
+          <span>Hoje, 08:30 - 09:30</span>
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Local:</span> Escritório Movelmar - Sala 3
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Participantes:</span>
+          <div class="participants">
+            <span class="participant-tag">João Silva</span>
+            <span class="participant-tag">Maria Santos</span>
+            <span class="participant-tag">Pedro Costa</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Card Evento (Simples)</h2>
+    <div class="card card-evento">
+      <div class="card-header">
+        <span class="card-icon">📅</span>
+        <h3 class="card-title">Visita Fábrica</h3>
+      </div>
+      <div class="card-body">
+        <div class="card-time">
+          <span>🕐</span>
+          <span>Amanhã, 14:00 - 16:00</span>
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Local:</span> Fábrica Moveleira XYZ - Zona Industrial
+        </div>
+      </div>
+    </div>
+
+    <h2>Card Financeiro</h2>
+    <div class="card card-financeiro">
+      <div class="card-header">
+        <span class="card-icon">💰</span>
+        <h3 class="card-title">Faturamento Movelmar - Outubro</h3>
+      </div>
+      <div class="card-body">
+        <div class="finance-row">
+          <span class="finance-label">Liberado</span>
+          <span class="finance-value positive">R$ 325.000</span>
+        </div>
+        <div class="finance-row">
+          <span class="finance-label">Pendente</span>
+          <span class="finance-value warning">R$ 98.000</span>
+        </div>
+        <div class="finance-row">
+          <span class="finance-label">Bloqueado</span>
+          <span class="finance-value negative">R$ 250.000</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Card Contato (Completo)</h2>
+    <div class="card card-contato">
+      <div class="card-header">
+        <span class="card-icon">📞</span>
+        <h3 class="card-title">João Silva</h3>
+      </div>
+      <div class="card-body">
+        <div class="card-field">
+          <span class="card-field-label">Empresa:</span> Movelmar Indústria de Móveis
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Cargo:</span> Diretor Comercial
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Telefone:</span> <a href="tel:+5511987654321">(11) 98765-4321</a>
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Email:</span> <a href="mailto:joao.silva@movelmar.com.br">joao.silva@movelmar.com.br</a>
+        </div>
+        <div class="contact-tags">
+          <span class="tag">cliente</span>
+          <span class="tag">prioritário</span>
+          <span class="tag">móveis</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Card Contato (Mínimo)</h2>
+    <div class="card card-contato">
+      <div class="card-header">
+        <span class="card-icon">📞</span>
+        <h3 class="card-title">Maria Santos</h3>
+      </div>
+      <div class="card-body">
+        <div class="card-field">
+          <span class="card-field-label">Telefone:</span> <a href="tel:+5511912345678">(11) 91234-5678</a>
+        </div>
+        <div class="card-field">
+          <span class="card-field-label">Email:</span> <a href="mailto:maria@email.com">maria@email.com</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

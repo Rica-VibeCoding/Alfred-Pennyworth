@@ -10,6 +10,18 @@
         "N8N_API_URL": "https://n8n-n8n-editor.neldoo.easypanel.host/",
         "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ODUwMWYwNy1jMjJmLTQzNDctYmU0Mi0yMGIzYzkzNmZhYjAiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwOTM4MzM1fQ.gd1nK7lXDWZ2eqvwAc2-I39oQjFDfSVO0lcTe2PbvyM"
       }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase",
+        "--project-ref",
+        "qxhmkenttvmkhgotkxzt"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_894020321fc98e4a694a53dbdbf108a7550f5a43"
+      }
     }
   }
 }

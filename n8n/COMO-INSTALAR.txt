@@ -1,0 +1,52 @@
+═══════════════════════════════════════════════════════
+  INSTALAR BUSCA SEMÂNTICA (3 passos - 2 minutos)
+═══════════════════════════════════════════════════════
+
+PASSO 1: IMPORTAR
+─────────────────
+1. Abrir arquivo: n8n/fluxos/BUSCA-SEMANTICA-PRONTO.json
+2. Copiar TUDO (Ctrl+A, Ctrl+C)
+3. No N8N: Menu (três pontos) → Import from File → Paste
+4. Colar e importar
+5. Aparece 1 nó: "Busca Semântica de Contatos"
+
+
+PASSO 2: COPIAR NÓ PARA O ALFRED
+─────────────────────────────────
+1. Copiar o nó importado (Ctrl+C no nó)
+2. Abrir workflow "Alfred"
+3. Colar (Ctrl+V)
+4. Fechar workflow temporário "Busca Semântica - Importar..."
+
+
+PASSO 3: TROCAR OPENAI KEY + CONECTAR
+──────────────────────────────────────
+1. Clicar no nó "Busca Semântica de Contatos"
+2. No código, achar: 'Bearer sk-proj-TROQUE_PELA_SUA_KEY_OPENAI'
+3. Trocar pela sua OpenAI key real
+4. Arrastar bolinha ROXA → Personal Assistant
+5. Salvar workflow Alfred
+
+
+═══════════════════════════════════════════════════════
+  O QUE FAZ
+═══════════════════════════════════════════════════════
+
+Personal Assistant → usa tool → Busca Semântica
+
+Quando perguntar "quem é João?":
+1. Gera embedding da pergunta (OpenAI)
+2. Busca vetorial nos contatos (Supabase pgvector)
+3. Retorna top 5 com % de relevância
+
+
+═══════════════════════════════════════════════════════
+  TESTAR
+═══════════════════════════════════════════════════════
+
+"quem é o João?"
+"telefone do Pedro"
+"email do gerente"
+
+
+═══════════════════════════════════════════════════════

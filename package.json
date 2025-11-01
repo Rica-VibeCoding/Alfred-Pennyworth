@@ -1,0 +1,19 @@
+{
+  "name": "alfred-pennyworth",
+  "version": "1.3.0",
+  "description": "Alfred - Assistente Pessoal N8N",
+  "private": true,
+  "scripts": {
+    "dev": "serve -p 5500",
+    "dev:network": "serve -p 5500",
+    "dev:proxy": "node proxy-dev.js",
+    "start": "serve -p 5500",
+    "prod": "cp config-production.backup.js config.js && serve -p 5500"
+  },
+  "keywords": ["pwa", "assistant", "n8n", "chat"],
+  "author": "Ricardo Nilton Borges",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.3"
+  }
+}

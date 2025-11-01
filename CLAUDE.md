@@ -7,18 +7,79 @@
 **Perfil:**
 - Desenvolvedor full stack com visão empresarial
 - Trabalha na área comercial (representante de indústrias moveleiras)
-- Perfeccionista que valoriza verdade sobre incentivo
 - Busca soluções práticas e diretas
 - Sistema operacional: Windows 11
 - Celular: iPhone 11
 
-**Objetivo Pessoal:**
-- Juntar 3 milhões de reais até 2027
-- Usa tecnologia para otimizar processos comerciais
-- Valoriza eficiência e autonomia
+---
+
+## Estrutura de Arquivos (Atual)
+
+```
+/
+├── index.html              # Página principal
+├── manifest.json           # Configuração PWA
+├── sw.js                   # Service Worker v1.3.0 (com bypass N8N para iOS)
+├── config.js               # Config webhook (modo TESTE)
+├── config-production.backup.js  # Backup config produção
+├── package.json            # Scripts NPM e dependências
+├── DEV-LOCAL.md            # Documentação desenvolvimento local
+├── css/
+│   ├── style.css          # Estilos principais
+│   └── cards.css          # Estilos cards formatados
+├── js/
+│   ├── app.js             # Lógica principal e UI
+│   ├── api.js             # Comunicação N8N
+│   ├── speech.js          # Reconhecimento de voz
+│   ├── storage-v2.js      # LocalStorage V2 (sessões múltiplas)
+│   ├── sidebar.js         # Controle sidebar e histórico
+│   └── cards.js           # Renderização cards formatados
+└── assets/icons/          # Ícones PWA
+```
+
+**Ordem de carregamento scripts:**
+1. config.js → 2. storage-v2.js → 3. api.js → 4. speech.js → 5. sidebar.js → 6. cards.js → 7. app.js
+
+**Scripts NPM disponíveis:**
+- `npm run dev` - Servidor local (modo TESTE)
+- `npm run start` - Alias para dev
+- `npm run prod` - Servidor com config PRODUÇÃO
 
 ---
 
+## Desenvolvimento Local
+
+### Setup Rápido
+
+```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Rodar servidor
+npm run dev
+
+# 3. Abrir navegador
+http://127.0.0.1:5500  (⚠️ NÃO use localhost - CORS só aceita 127.0.0.1)
+```
+
+### ⚠️ Regra Importante
+
+**NUNCA abra index.html direto (protocolo file://)** - Causa erros:
+- ❌ CORS bloqueado
+- ❌ Service Worker não funciona
+- ❌ PWA não instala
+
+**SEMPRE use servidor HTTP** (`npm run dev` ou `npx serve`)
+
+### Documentação Completa
+
+Consulte [DEV-LOCAL.md](./DEV-LOCAL.md) para:
+- Troubleshooting completo
+- Estrutura de arquivos detalhada
+- Cache strategy
+- Changelog
+
+---
 ## Contexto do Projeto
 
 ### Problema Atual
@@ -30,7 +91,6 @@ Ricardo usa **N8N como assistente pessoal** (mordomo digital) que:
 - Tem acesso ao Google Drive
 - Gerencia todo ecossistema profissional/pessoal
 
-**Problema:** Atualmente aciona via **WhatsApp**, dependendo de terceiros.
 
 ### Solução Proposta
 
@@ -57,11 +117,6 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 - PWA nativo funciona perfeitamente
 - Projeto pequeno e focado (não precisa de framework)
 
-**Rejeitado:**
-- NextJS (exagero, complexidade desnecessária)
-- React/Vue (adiciona peso sem necessidade)
-- Vite (build process desnecessário)
-
 ### Hospedagem: Vercel (Gratuito)
 
 **Por quê:**
@@ -71,15 +126,26 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 - CDN global
 - Simples e rápido
 
-**Rejeitado:**
-- Hostinger VPS (overkill para arquivos estáticos)
-- Hostinger compartilhada (mais trabalhoso que Vercel)
-
 ### Comunicação: Webhook N8N
 
-**Status:** N8N já está configurado e funcionando
-**Método:** POST para webhook
+**Status:** N8N configurado e funcionando
+**Método:** POST para webhook configurado em `config.js`
 **Resposta:** JSON estruturado
+
+**Configuração Atual (config.js):**
+- **Modo:** TESTE (webhook-test)
+- **USER_ID:** ricardo-dev
+- **TIMEOUT:** 120000ms (2 minutos) - workflows complexos com múltiplas APIs externas
+- **RETRY_ATTEMPTS:** 3 tentativas com delays progressivos
+
+**URLs dos Webhooks:**
+- **Produção:** `https://n8n-n8n.l1huim.easypanel.host/webhook/0c689264-8178-477c-a366-66559b14cf16`
+- **Teste:** `https://n8n-n8n.l1huim.easypanel.host/webhook-test/0c689264-8178-477c-a366-66559b14cf16`
+
+**Trocar para produção:**
+```bash
+cp config-production.backup.js config.js
+```
 
 ---
 
@@ -88,10 +154,11 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 ### Minimalismo Funcional
 
 **Filosofia:** Menos é mais
-- Não tem 10 telas, é uma tela de chat
-- Pouquíssimo código (< 300 linhas total estimado)
+- uma tela de chat + side bar pequena
+- Pouquíssimo código (< 1000 linhas total estimado)
 - Interface limpa, moderna, sem enfeites desnecessários
 - Cada elemento tem propósito claro
+- ui com influencia do chat da https://www.perplexity.ai/
 
 ### Mobile-First
 
@@ -101,69 +168,37 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 - PWA instalável na tela inicial
 - Funciona offline (interface)
 
-### Performance Crítica
-
-**Objetivo:** Carregamento instantâneo
-- Bundle total < 100KB
-- First Contentful Paint < 1s
-- Time to Interactive < 2s
-- Lighthouse Score > 90
-
 ---
 
-## Funcionalidades V1 (MVP)
+## Funcionalidades Implementadas (V1.3 - Produção)
 
-**Essenciais (P0):**
-1. Envio de mensagem por texto
-2. Envio de mensagem por voz (Speech Recognition API)
-3. Exibição de mensagens estilo chat
-4. Indicador de carregamento
-5. Histórico de conversas (LocalStorage)
-6. Design responsivo
-7. Tratamento de erros
+**Core (✅ Completo):**
+1. ✅ Envio de mensagem por texto e voz (Speech Recognition API)
+2. ✅ Sistema de sessões múltiplas (Storage V2)
+3. ✅ Sidebar com histórico organizado (Hoje, Ontem, 7 dias, Antigas)
+4. ✅ Ícones contextuais automáticos (email, agenda, cliente, relatório)
+5. ✅ Botão "Nova conversa" no header
+6. ✅ Tratamento robusto de erros com retry
+7. ✅ Timeout visual de 2 minutos (libera UI mesmo se servidor não responder)
+8. ✅ PWA completo (instalável, offline-first)
+9. ✅ Limpeza automática de sessões antigas (> 7 dias)
+10. ✅ Limite de 20 sessões máximas
 
-**Importantes (P1):**
-8. PWA básico (instalável)
+**Características Técnicas:**
+- Storage V2 com migração automática de V1
+- Service Worker com bypass para N8N (workaround iOS Safari)
+- Retry automático (3 tentativas) em erros de rede
+- Sanitização de input e validação de resposta
 
-**Tudo mais é V2 (futuro).**
+## Funcionalidades Planejadas (V2)
 
----
-
-## Funcionalidades V2 (Evolução Futura)
-
-**Não desenvolver agora, mas preparar estrutura:**
-- Atalhos rápidos ("Agenda hoje", "Últimos emails")
-- Respostas formatadas por tipo (agenda em cards, emails em lista)
-- Favoritos/pins de respostas importantes
-- Modo offline inteligente
-- Sincronização multidevice (Supabase/Firebase)
-
-**Preparação:**
-- N8N já retorna campo `type` na resposta (V1 ignora, V2 usa)
-- JSON de histórico estruturado para aceitar metadata futura
-- CSS modular para adicionar novos componentes depois
-
----
-
-## Estrutura de Arquivos
-
-```
-/
-├── index.html              # Página única
-├── css/
-│   └── style.css           # Estilos (pode ser arquivo único)
-├── js/
-│   ├── app.js              # Lógica principal
-│   ├── api.js              # Comunicação N8N
-│   ├── storage.js          # LocalStorage
-│   └── speech.js           # Reconhecimento de voz
-├── manifest.json           # PWA config
-├── sw.js                   # Service Worker
-├── config.js               # Configurações (não versionar)
-├── config.example.js       # Template de config
-└── assets/
-    └── icons/              # Ícones PWA (múltiplos tamanhos)
-```
+**Futuro:**
+- Atalhos rápidos customizáveis
+- Respostas formatadas por tipo (cards, listas)
+- Favoritos/pins de mensagens
+- Sincronização multidevice (Supabase)
+- Dark mode
+- Push notifications (quando iOS suportar)
 
 ---
 
@@ -206,14 +241,17 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 
 ## Design System
 
-### Cores Principais
+### Cores Principais (Implementadas)
 
 ```css
---primary: #2563eb          /* Azul - ações */
+--primary: #14b8a6          /* Teal - ações */
 --background: #ffffff       /* Fundo */
 --surface: #f9fafb         /* Cards */
 --text-primary: #111827     /* Texto */
 --text-secondary: #6b7280   /* Secundário */
+--message-sent-bg: #f3f4f6         /* Cinza claro */
+--message-received-bg: #d1fae5     /* Verde claro */
+--sidebar-bg: #fafafa       /* Sidebar */
 ```
 
 ### Tipografia
@@ -223,13 +261,17 @@ Criar **interface web própria** (PWA) para acionar N8N via webhook, sem depende
 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 ```
 
-### Componentes Principais
+### Componentes Principais (Implementados)
 
-1. **Mensagem do usuário:** Azul, direita, cantos arredondados
-2. **Mensagem do assistente:** Cinza claro, esquerda, cantos arredondados
-3. **Input:** Barra inferior, auto-expand, microfone integrado
-4. **Loading:** Três pontos animados
-5. **Erro:** Banner vermelho claro no topo
+1. **Header:** Botão menu (sidebar), título "Alfred", status conexão, botão nova conversa
+2. **Sidebar:** Histórico de sessões com ícones contextuais, agrupamento temporal
+3. **Mensagem do usuário:** Cinza claro, direita, cantos arredondados
+4. **Mensagem do assistente:** Verde claro, esquerda, cantos arredondados
+5. **Input:** Barra inferior, auto-expand, microfone integrado, botão enviar
+6. **Loading:** Três pontos animados (verde)
+7. **Erro:** Banner vermelho claro no topo com botão fechar
+8. **Retry:** Botão "Tentar novamente" em mensagens de erro
+9. **Empty State:** Saudação inicial quando não há mensagens
 
 ### Inspirações Visuais
 
@@ -282,10 +324,12 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 ### API
 
-1. Timeout de 30 segundos
-2. Retry: 3 tentativas (1s, 3s, 5s)
-3. Validar JSON de resposta
-4. Tratar todos status codes (200, 400, 500, 503)
+1. Timeout de 120 segundos (2 minutos) - workflows N8N complexos
+2. Timeout visual de 120 segundos (libera UI independente da API)
+3. Retry: 3 tentativas (1s, 3s, 5s) apenas para erros 5xx e rede
+4. Validar JSON de resposta e normalizar formatos diferentes
+5. Tratar todos status codes (200, 400, 500, 503)
+6. Sanitização de input (remove caracteres invisíveis)
 
 ---
 
@@ -308,44 +352,7 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 ---
 
-## Testes Necessários
-
-### Funcionalidade
-
-- [ ] Envia mensagem por texto
-- [ ] Envia mensagem por voz
-- [ ] Recebe e exibe resposta
-- [ ] Histórico persiste
-- [ ] Funciona offline (interface)
-- [ ] PWA instala corretamente
-- [ ] Erros são tratados
-
-### Dispositivos
-
-- [ ] iPhone 11 (Safari) - PRIORIDADE
-- [ ] Android (Chrome)
-- [ ] Desktop (Chrome, Safari)
-
-### Performance
-
-- [ ] Carrega < 2s
-- [ ] Bundle < 100KB
-- [ ] Lighthouse > 90
-
----
-
 ## Priorização Clara
-
-**P0 (Fazer AGORA - V1):**
-- Interface funcional
-- Envio texto/voz
-- Recebimento respostas
-- Histórico
-- PWA básico
-
-**P1 (Nice to have - V1):**
-- Estado vazio bonito
-- Animações suaves
 
 **P2+ (Futuro - V2):**
 - Atalhos
@@ -353,7 +360,7 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 - Sincronização
 - Tudo mais
 
-**Foco:** Fazer V1 funcionar perfeitamente antes de pensar em V2.
+**Foco:** pensar em V2.
 
 ---
 
@@ -377,17 +384,29 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 5. Frameworks sem justificativa
 6. Relatórios verbosos com blocos de código quando não solicitados
 
+ ### Comunicação efetiva:
+
+  1. **Diagnóstico primeiro:** Identifique o problema, causa e solução
+  2. **Seja direto:** Sem introduções longas ou contexto desnecessário
+  3. **Código sob demanda:** Mostre código só se for pedido ou absolutamente necessário
+  4. **Linguagem clara:** Técnico quando preciso, simples quando possível
+  5. **Ação sobre teoria:** O que fazer > por que fazer (a menos que perguntado)
+
+  ### O que funciona:
+
+  - Relatórios tipo: "3 erros encontrados em X, Y, Z. Causa: A. Solução: B."
+  - Respostas que terminam com próximo passo claro
+  - Explicações técnicas quando há trade-offs a decidir
+
+  ### O que não funciona:
+
+  - Blocos de código não solicitados
+  - Explicações que repetem o óbvio
+  - Relatórios que "contam uma história"
+
 ---
 
 ## Observações Importantes
-
-### Voz para Texto
-
-- Usar **Web Speech API** (nativa)
-- Funciona no Safari iOS (iPhone 11)
-- Precisa HTTPS
-- Pedir permissão adequadamente
-- Fallback: ocultar botão se não suportado
 
 ### LocalStorage
 
@@ -420,77 +439,7 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 ---
 
-## Comandos Úteis
-
-### Desenvolvimento Local
-
-```bash
-# Servidor local simples (Live Server, http-server, etc)
-npx http-server -p 3000
-
-# Ou Python
-python -m http.server 3000
-```
-
-### Deploy Vercel
-
-```bash
-# Instalar CLI
-npm i -g vercel
-
-# Deploy
-vercel deploy
-
-# Production
-vercel --prod
-```
-
----
-
-## Checklist Final Antes de Entregar
-
-### Funcionalidade
-
-- [ ] Mensagem por texto funciona
-- [ ] Mensagem por voz funciona
-- [ ] Respostas aparecem corretamente
-- [ ] Histórico salva e carrega
-- [ ] Erros são tratados
-- [ ] PWA é instalável
-
-### Qualidade
-
-- [ ] Código limpo e organizado
-- [ ] Performance ótima (< 2s)
-- [ ] Responsivo (mobile + desktop)
-- [ ] Sem console.errors
-
-### Deploy
-
-- [ ] config.js não versionado
-- [ ] config.example.js criado
-- [ ] README atualizado com instruções
-- [ ] Deploy na Vercel funcionando
-- [ ] HTTPS ativo
-
-### Testes
-
-- [ ] Testado no iPhone 11
-- [ ] Testado em Android
-- [ ] Testado offline
-- [ ] Testado com erro de rede
-
----
-
 ## Contexto Adicional: Filosofia do Projeto
-
-### Por Que Este Projeto Existe
-
-Ricardo quer **independência**. Usar WhatsApp para acionar N8N é:
-- Depender de terceiro
-- Interface não otimizada
-- Sem personalização
-- Pode mudar/quebrar a qualquer momento
 
 Solução própria é **ativo dele**. Controla, melhora quando quer, integra o que precisar.
 
@@ -551,31 +500,7 @@ Simplicidade na interface, poder nos bastidores.
 - **Benchmarks:** ChatGPT, Claude Code, WhatsApp Web, Telegram Web
 - **Foco temporal:** Práticas de 2025 ou 2024 validadas
 
-### Plano de Execução
-
-**Ver arquivo:** `PLANO-EXECUCAO.md` para roadmap completo com todas as fases detalhadas.
-
----
-
-## Mindset para Desenvolvimento
-
-### Perguntas a Fazer Sempre
-
-1. **Isso é realmente necessário?** (Minimalismo)
-2. **Isso deixa mais rápido ou mais lento?** (Performance)
-3. **Isso adiciona dependência?** (Evitar)
-4. **Isso funciona no iPhone 11?** (Prioridade)
-5. **Isso é fácil de manter?** (Simplicidade)
-
-### Princípios
-
-- **Less is more:** Cada linha de código tem custo
-- **Fast is better:** Usuário não espera
-- **Simple is better:** Manutenção futura agradece
-- **Working is better:** Funcional > bonito (mas queremos ambos)
-- **Research-driven:** Toda decisão baseada em pesquisa
-
----
+--
 
 ## Resumo Executivo (TL;DR)
 
@@ -591,8 +516,3 @@ Simplicidade na interface, poder nos bastidores.
 
 **Prioridade:** Funcionalidade > Beleza (mas queremos ambos)
 
----
-
-**Última atualização:** Outubro 23, 2025
-**Versão:** 1.0
-**Status:** Pronto para desenvolvimento

@@ -6,11 +6,14 @@ Interface web PWA minimalista para acionar workflows N8N via webhook, permitindo
 
 Alfred é um assistente pessoal que se conecta ao N8N para consultar emails, gerenciar agenda, acessar dados do Supabase e automatizar processos. Esta interface web substitui a dependência de WhatsApp ou outros apps de terceiros, oferecendo controle total e experiência otimizada.
 
+**Suporte Multi-usuário**: Este projeto foi projetado para ser facilmente replicado para múltiplos usuários (família, equipe) mantendo um único código-fonte centralizado. Cada pessoa tem seu próprio PWA independente com URL personalizada.
+
 ### Características
 
 - **Zero dependências**: HTML, CSS e JavaScript puro
 - **Performance máxima**: Bundle < 40KB, carregamento < 2s
 - **PWA completo**: Instalável na tela inicial (iOS/Android)
+- **Multi-usuário**: 1 código → múltiplos deployments independentes
 - **Offline-first**: Interface funciona sem conexão
 - **Mobile-first**: Otimizado para iPhone 11 Safari
 - **Reconhecimento de voz**: Web Speech API nativa
@@ -28,112 +31,135 @@ Alfred é um assistente pessoal que se conecta ao N8N para consultar emails, ger
 
 ```
 /
-├── index.html              # Página principal (3.2KB)
-├── manifest.json           # Configuração PWA (1.8KB)
-├── sw.js                   # Service Worker (4.2KB)
+├── index.html              # Página principal
+├── manifest.json           # Configuração PWA
+├── sw.js                   # Service Worker (com bypass N8N)
 ├── vercel.json             # Configuração Vercel
 ├── config.example.js       # Template de configuração
+├── config.js               # Configuração atual (gitignored)
 ├── css/
-│   └── style.css          # Estilos (6.5KB)
+│   └── style.css          # Estilos completos
 ├── js/
-│   ├── app.js             # Lógica principal (11KB)
-│   ├── api.js             # Comunicação N8N (2.8KB)
-│   ├── speech.js          # Reconhecimento de voz (3.3KB)
-│   └── storage.js         # LocalStorage (4.4KB)
+│   ├── app.js             # Lógica principal e UI
+│   ├── api.js             # Comunicação N8N
+│   ├── speech.js          # Reconhecimento de voz
+│   ├── storage-v2.js      # LocalStorage V2 (sessões múltiplas)
+│   └── sidebar.js         # Controle sidebar e histórico
 └── assets/
     └── icons/             # Ícones PWA (múltiplos tamanhos)
 ```
 
-**Bundle Total**: ~36KB (sem config.js)
+**Bundle Total**: ~40KB (HTML+CSS+JS, sem config e ícones)
 
 ## Instalação Local
 
 ### Pré-requisitos
 
-- Node.js (opcional, apenas para servidor local)
+- Node.js v16+ (recomendado: v22.21.0)
+- npm ou pnpm
 - Navegador moderno com suporte a Service Worker
-- HTTPS (obrigatório para PWA e Speech API)
 
-### Passo 1: Clonar Repositório
+### Setup Rápido (Recomendado)
 
 ```bash
-git clone <seu-repo>
+# 1. Clonar repositório
+git clone https://github.com/Rica-VibeCoding/Alfred-Pennyworth.git
 cd alfred-pennyworth
+
+# 2. Instalar dependências
+npm install
+
+# 3. Rodar servidor local
+npm run dev
+
+# 4. Abrir navegador
+# http://127.0.0.1:5500 (NÃO use localhost - problema CORS)
 ```
 
-### Passo 2: Configurar Webhook N8N
+**✅ Pronto!** A aplicação roda em modo desenvolvimento (webhook de teste).
 
-1. Copie o arquivo de exemplo:
-```bash
-cp config.example.js config.js
-```
+📖 **Documentação completa:** Veja [DEV-LOCAL.md](./DEV-LOCAL.md) para mais detalhes.
 
-2. Edite `config.js` e configure seu webhook:
+---
+
+### Passo 1: Configurar Webhook N8N
+
+**Desenvolvimento (Padrão):**
+O projeto já vem configurado com webhook de teste em `config.js`.
+
+**Produção:**
+Para usar seu próprio webhook N8N, edite `config.js`:
+
 ```javascript
 const CONFIG = {
   API_ENDPOINT: 'https://seu-n8n.com/webhook/seu-id',
   APP_NAME: 'Alfred',
   USER_ID: 'seu-nome',
-  TIMEOUT: 30000,
+  TIMEOUT: 120000, // 2 minutos
   RETRY_ATTEMPTS: 3,
   RETRY_DELAYS: [1000, 3000, 5000]
 };
 ```
 
-### Passo 3: Gerar Ícones PWA
+### Passo 2: Scripts Disponíveis
 
-Os ícones são necessários para instalação do PWA. Escolha um método:
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor local (modo TESTE) |
+| `npm run start` | Alias para `dev` |
+| `npm run prod` | Servidor com config PRODUÇÃO |
 
-#### Método 1: Browser (Recomendado)
+### Passo 3: Ícones PWA
 
-1. Abra `assets/icons/generate-icons.html` no navegador
-2. Clique em "Gerar e Baixar Todos os Ícones"
-3. Mova os arquivos PNG para `/assets/icons/`
+✅ **Ícones já incluídos** no projeto em `/assets/icons/`.
 
-#### Método 2: Node.js
+Se precisar regenerar:
 
 ```bash
 cd assets/icons
-npm install canvas
-node generate-icons.js
+node generate-icons-cli.js
 ```
 
-#### Método 3: Online
-
-Use [PWA Builder Image Generator](https://www.pwabuilder.com/imageGenerator) com o `icon.svg`
-
-**Ícones necessários:**
+**Ícones incluídos:**
 - icon-32x32.png (favicon)
 - icon-72x72.png, icon-96x96.png, icon-128x128.png, icon-144x144.png
 - icon-152x152.png, icon-180x180.png (Apple)
 - icon-192x192.png, icon-384x384.png, icon-512x512.png (Android)
 
-### Passo 4: Servidor Local
+### ⚠️ Importante: Nunca Abra index.html Direto
 
-Escolha uma opção para rodar localmente com HTTPS (necessário para PWA):
-
-#### Opção A: Live Server (VS Code)
-
-1. Instale extensão "Live Server"
-2. Clique direito em `index.html` > "Open with Live Server"
-
-#### Opção B: http-server com SSL
-
+**❌ Não funciona:**
 ```bash
-npx http-server -S -C cert.pem -K key.pem -p 3000
+# Duplo clique em index.html (protocolo file://)
+# Causa erros CORS e Service Worker não funciona
 ```
 
-#### Opção C: Python
-
+**✅ Sempre use servidor HTTP:**
 ```bash
-python -m http.server 3000
+npm run dev
+# ou
+npx serve -p 5500
 ```
-
-Acesse: `https://localhost:3000`
 
 ## Deploy na Vercel
 
-### Método 1: CLI (Recomendado)
+### Deploy Multi-usuário (Recomendado)
+
+Este projeto suporta **múltiplos usuários independentes** usando **1 repositório + múltiplos projetos Vercel**.
+
+**Como funciona:**
+- 1 código-fonte centralizado (manutenção única)
+- Cada pessoa tem seu próprio projeto Vercel com URL personalizada
+- Cada projeto usa variáveis de ambiente diferentes (webhook, userId, etc)
+- Atualização do código: 1 `git push` → todos os sites atualizam automaticamente
+
+**Usuários configurados:**
+- 👨‍💼 **Ricardo** → `alfred-ricardo.vercel.app`
+- 👩 **Dani** → `alfred-dani.vercel.app`
+- 👧 **Letícia** → `alfred-leticia.vercel.app`
+- 👧 **Isabelle** → `alfred-isabelle.vercel.app`
+
+### Passo 1: Setup Inicial (uma vez)
 
 ```bash
 # Instalar Vercel CLI
@@ -141,33 +167,175 @@ npm i -g vercel
 
 # Login
 vercel login
-
-# Deploy de teste
-vercel
-
-# Deploy para produção
-vercel --prod
 ```
 
-### Método 2: Git Integration
+### Passo 2: Deploy para cada usuário
+
+Crie um projeto separado para cada pessoa:
+
+#### Deploy Ricardo
+
+```bash
+# No diretório do projeto
+vercel --prod
+
+# Durante o wizard:
+# - Project Name: alfred-ricardo
+# - Link to existing: No
+```
+
+Depois configure as variáveis de ambiente:
+
+```bash
+vercel env add API_ENDPOINT production
+# Cole: https://seu-n8n.com/webhook/ricardo
+
+vercel env add USER_ID production
+# Digite: ricardo-nilton
+
+vercel env add APP_NAME production
+# Digite: Alfred
+```
+
+#### Deploy Dani
+
+Repita o processo mudando apenas o nome do projeto e as variáveis:
+
+```bash
+vercel --prod
+# Project Name: alfred-dani
+
+vercel env add API_ENDPOINT production
+# Cole: https://seu-n8n.com/webhook/dani
+
+vercel env add USER_ID production
+# Digite: dani
+
+vercel env add APP_NAME production
+# Digite: Alfred
+```
+
+#### Deploy Letícia e Isabelle
+
+Repita o mesmo processo:
+- **Letícia**: `alfred-leticia`, webhook `/leticia`, userId `leticia`
+- **Isabelle**: `alfred-isabelle`, webhook `/isabelle`, userId `isabelle`
+
+### Passo 3: Configuração N8N (Webhooks)
+
+Você tem 2 opções para organizar os workflows N8N:
+
+#### Opção A: Workflows Separados (RECOMENDADO)
+
+Crie 1 workflow independente para cada pessoa:
+
+```
+📁 N8N Workflows:
+├── 🔵 Alfred - Ricardo (webhook: /ricardo)
+├── 🟢 Alfred - Dani (webhook: /dani)
+├── 🟡 Alfred - Letícia (webhook: /leticia)
+└── 🟣 Alfred - Isabelle (webhook: /isabelle)
+```
+
+**Vantagens:**
+- ✅ Isolamento total (dados não se misturam)
+- ✅ Permissões independentes (cada um acessa seus próprios recursos)
+- ✅ Debug mais fácil (logs separados)
+- ✅ Personalização individual (lógica diferente por usuário)
+- ✅ Escalável (adicionar novos usuários sem afetar existentes)
+
+**Quando usar:** Contextos diferentes (ex: profissional vs pessoal), permissões diferentes
+
+#### Opção B: Workflow Único com Roteamento
+
+Use 1 workflow principal que roteia baseado no `userId`:
+
+```
+📁 N8N Workflow:
+└── 🔵 Alfred - Router (webhook: /alfred)
+    ├── Switch (baseado em userId)
+    ├──── ricardo → Fluxo Ricardo
+    ├──── dani → Fluxo Dani
+    ├──── leticia → Fluxo Letícia
+    └──── isabelle → Fluxo Isabelle
+```
+
+**Vantagens:**
+- ✅ Código compartilhado (DRY)
+- ✅ Manutenção centralizada
+- ✅ Lógica comum reutilizada
+
+**Desvantagens:**
+- ❌ Complexidade adicional
+- ❌ Risco de dados se misturarem
+- ❌ Debug mais difícil
+
+**Quando usar:** Lógica idêntica entre usuários, contextos similares
+
+### Exemplo de Estrutura de Webhooks (Opção A)
+
+```bash
+# Ricardo (Profissional)
+https://n8n-n8n.l1huim.easypanel.host/webhook/alfred-ricardo
+
+# Dani (Pessoal)
+https://n8n-n8n.l1huim.easypanel.host/webhook/alfred-dani
+
+# Letícia (Pessoal)
+https://n8n-n8n.l1huim.easypanel.host/webhook/alfred-leticia
+
+# Isabelle (Pessoal)
+https://n8n-n8n.l1huim.easypanel.host/webhook/alfred-isabelle
+```
+
+### Manutenção Contínua
+
+Após o setup inicial, a manutenção é **zero esforço**:
+
+1. Desenvolva mudanças localmente
+2. Teste
+3. `git push origin main`
+4. **Todos os 4 sites atualizam automaticamente** 🎉
+
+Não precisa:
+- ❌ Abrir 4 projetos diferentes
+- ❌ Fazer deploy manual 4 vezes
+- ❌ Sincronizar código entre repositórios
+- ❌ Gerenciar branches
+
+### URLs Finais
+
+Após deploy, cada pessoa terá sua própria URL:
+
+- Ricardo: `https://alfred-ricardo.vercel.app`
+- Dani: `https://alfred-dani.vercel.app`
+- Letícia: `https://alfred-leticia.vercel.app`
+- Isabelle: `https://alfred-isabelle.vercel.app`
+
+Cada uma pode instalar seu próprio PWA na tela inicial do celular!
+
+### Método Alternativo: Git Integration (Automático)
+
+Se preferir deploy automático via GitHub:
 
 1. Faça push do código para GitHub
 2. Acesse [vercel.com](https://vercel.com)
-3. Clique em "Import Project"
-4. Selecione seu repositório
-5. Deploy automático!
+3. Clique em "Import Project" **4 vezes** (1 para cada pessoa)
+4. Para cada projeto:
+   - Selecione o mesmo repositório
+   - Mude o nome do projeto (`alfred-ricardo`, `alfred-dani`, etc)
+   - Configure variáveis de ambiente no painel
+5. Deploy automático a cada `git push`!
 
-### Variáveis de Ambiente (Vercel)
+### Variáveis de Ambiente por Projeto
 
-Configure no painel da Vercel:
-- `API_ENDPOINT`: URL do webhook N8N
-- `USER_ID`: Seu identificador
+Cada projeto Vercel deve ter estas variáveis configuradas:
 
-Ou configure via CLI:
-```bash
-vercel env add API_ENDPOINT
-vercel env add USER_ID
-```
+| Variável | Ricardo | Dani | Letícia | Isabelle |
+|----------|---------|------|---------|----------|
+| `API_ENDPOINT` | `https://...webhook/alfred-ricardo` | `https://...webhook/alfred-dani` | `https://...webhook/alfred-leticia` | `https://...webhook/alfred-isabelle` |
+| `USER_ID` | `ricardo-nilton` | `dani` | `leticia` | `isabelle` |
+| `APP_NAME` | `Alfred` | `Alfred` | `Alfred` | `Alfred` |
 
 **Importante**: Não commite `config.js` (já está no `.gitignore`)
 
@@ -277,30 +445,32 @@ vercel env add USER_ID
 
 O sistema implementa tratamento robusto de erros para garantir que a interface nunca fique travada:
 
-### Timeout Visual (15 segundos)
-- Se o servidor N8N demorar muito para responder, a interface é liberada automaticamente após 15s
-- Usuário pode continuar enviando novas mensagens
-- Mensagem de erro clara: "Servidor demorou muito para responder."
+### Timeout Duplo (API + Visual)
+- **Timeout API:** 120 segundos (2 minutos) - N8N workflows complexos com múltiplas APIs
+- **Timeout Visual:** 120 segundos - libera UI mesmo se API não responder
+- **Retry automático:** 3 tentativas (1s, 3s, 5s) apenas para erros 5xx e rede
+- **Erros 4xx:** Não fazem retry (bad request, not found, etc)
 
 ### Botão "Tentar Novamente"
 - Mensagens de erro exibem botão "↻ Tentar novamente"
 - Um clique reenvia automaticamente a última mensagem que falhou
 - Não precisa digitar novamente ou fechar o app
 
-### Estado Recuperável
+### Estado Sempre Recuperável
 - Após qualquer erro, a interface é imediatamente liberada
 - Usuário pode:
-  - Tentar novamente a mensagem que falhou
+  - Tentar novamente a mensagem que falhou (botão retry)
   - Enviar uma nova mensagem diferente
   - Continuar usando o app normalmente
 - **Nunca** é necessário fechar e abrir o app
 
 ### Tipos de Erro Tratados
-- **Timeout**: Servidor não responde em 30s (com 3 retries automáticos)
-- **Offline**: Sem conexão à internet
-- **Erro HTTP**: Status 400, 500, 503, etc
-- **Erro N8N**: Workflow com problema interno
-- **Timeout Visual**: Servidor demora > 15s (libera UI independente do status da API)
+- **Timeout API**: Servidor não responde em 120s (2min) após 3 retries
+- **Timeout Visual**: Libera UI após 120s independente do status da API
+- **Offline**: Sem conexão à internet (detectado antes de enviar)
+- **Erro HTTP 4xx**: Erro de cliente (não faz retry)
+- **Erro HTTP 5xx**: Erro de servidor (faz retry automático)
+- **Erro N8N**: Workflow com problema interno (resposta com success: false)
 
 ## Troubleshooting
 
@@ -349,7 +519,7 @@ curl -X POST https://seu-n8n.com/webhook/id \
 - ✅ Sanitização de input
 - ✅ Validação de JSON response
 - ✅ Rate limiting (debounce 500ms)
-- ✅ Timeout de 30s em requisições
+- ✅ Timeout de 120s (2 min) em requisições
 - ✅ Config.js não versionado
 - ✅ CORS configurado no N8N
 
@@ -390,28 +560,101 @@ curl -X POST https://seu-n8n.com/webhook/id \
 - [ ] Interactive < 2s
 - [ ] Bundle < 100KB
 
+## Sistema de Sessões (V2)
+
+O Alfred organiza conversas em **sessões múltiplas** com histórico separado e persistente.
+
+### Como Funciona
+
+- **Nova sessão:** Botão "+" no header cria conversa limpa
+- **Trocar sessão:** Botão "☰" abre sidebar com histórico completo
+- **Título automático:** Primeiros 40 caracteres da primeira mensagem do usuário
+- **Agrupamento temporal automático:**
+  - Hoje (conversas de hoje)
+  - Ontem (conversas de ontem)
+  - Últimos 7 dias
+  - Mais antigas
+
+### Limites e Limpeza
+
+- **Máximo:** 20 sessões salvas simultaneamente
+- **Idade máxima:** 7 dias (sessões antigas removidas automaticamente)
+- **Limpeza manual:** Botão "Limpar antigas" na sidebar
+- **Proteção:** Sessão atual nunca é removida
+
+### Armazenamento (Storage V2)
+
+- **LocalStorage key:** `alfred_sessions` (estrutura V2)
+- **Migração automática:** Dados V1 (`alfred_data`) convertidos automaticamente para V2
+- **Backup preservado:** `alfred_data_v1_backup` mantido após migração
+- **Cada sessão contém:**
+  - ID único (UUID)
+  - Título (gerado da primeira mensagem)
+  - Array de mensagens com timestamps
+  - createdAt e updatedAt
+
+### Ícones Contextuais Automáticos
+
+Detectados pela primeira mensagem da sessão:
+- 📧 Email (palavras-chave: "email", "e-mail")
+- 📅 Agenda (palavras-chave: "agenda", "calendário", "reunião")
+- 👤 Cliente (palavras-chave: "cliente", "contato")
+- 📊 Relatório (palavras-chave: "relatório", "análise", "dados")
+- 💬 Padrão (outras conversas)
+
+---
+
 ## Roadmap
 
-### V1.1 (Atual - Em Produção)
+### V1.3 (✅ Concluído - Em Produção)
 
-- ✅ Interface de chat funcional
-- ✅ Envio por texto e voz
-- ✅ Histórico local
-- ✅ PWA completo
-- ✅ Tratamento robusto de erros
-- ✅ Timeout visual (15s) - libera UI mesmo se servidor não responder
+**Interface & UX:**
+- ✅ Interface de chat responsiva e moderna
+- ✅ Envio por texto e voz (Speech Recognition API)
+- ✅ Sistema de sessões múltiplas (Storage V2)
+- ✅ Sidebar com histórico completo
+- ✅ Agrupamento temporal automático (Hoje, Ontem, 7 dias, Antigas)
+- ✅ Ícones contextuais automáticos
+- ✅ Empty state e transições suaves
+
+**Funcionalidades:**
+- ✅ PWA completo (instalável, offline-first)
+- ✅ Tratamento robusto de erros com retry
+- ✅ Timeout duplo (API 120s + Visual 120s)
 - ✅ Botão "Tentar novamente" em erros
-- ✅ Estado recuperável após erro
-- ✅ Offline UI
+- ✅ Estado sempre recuperável (nunca trava)
+- ✅ Limpeza automática de sessões antigas (> 7 dias)
+- ✅ Limite de 20 sessões máximas
 
-### V2 (Futuro)
+**Deploy:**
+- ✅ Multi-usuário (1 código → N sites independentes)
+- ✅ Variáveis de ambiente por projeto (Vercel)
+- ✅ Deploy automático via Git
 
-- [ ] Atalhos rápidos ("Agenda hoje", "Últimos emails")
+**Técnico:**
+- ✅ Service Worker com bypass N8N (workaround iOS)
+- ✅ Migração automática Storage V1 → V2
+- ✅ Retry inteligente (apenas 5xx e rede)
+- ✅ Sanitização de input
+
+### V2 (Planejado)
+
+**Features:**
+- [ ] Atalhos rápidos customizáveis
 - [ ] Respostas formatadas por tipo (cards, listas)
-- [ ] Favoritos/pins de mensagens
-- [ ] Sincronização multidevice (Supabase/Firebase)
-- [ ] Temas (dark mode)
+- [ ] Favoritos/pins de mensagens importantes
+- [ ] Busca no histórico
+- [ ] Exportar conversas
+
+**Integração:**
+- [ ] Sincronização multidevice (Supabase)
 - [ ] Push notifications (quando iOS suportar)
+
+**UI/UX:**
+- [ ] Dark mode
+- [ ] Temas personalizáveis
+- [ ] Markdown nas respostas
+- [ ] Anexos de arquivos
 
 ## Contribuindo
 
@@ -444,6 +687,9 @@ MIT License - Sinta-se livre para usar em seus projetos
 
 ---
 
-**Última atualização**: Outubro 24, 2025
-**Versão**: 1.1.0
-**Status**: 🚀 **EM PRODUÇÃO**
+**Última atualização**: Novembro 01, 2025
+**Versão**: 1.3.0
+**Status**: 🚀 **EM PRODUÇÃO** (Suporte Multi-usuário)
+
+📖 **Documentação de Desenvolvimento:** [DEV-LOCAL.md](./DEV-LOCAL.md)
+📊 **Guia Multi-usuário:** [MULTI-USER-SETUP.md](./MULTI-USER-SETUP.md)

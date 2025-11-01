@@ -1,92 +1,109 @@
-# Assistente Pessoal N8N - Interface Web
+# Alfred - Assistente Pessoal N8N
 
 ## Visão Geral
 
-Interface web minimalista para interação com assistente pessoal via N8N. Substitui WhatsApp/Telegram por solução proprietária, leve e focada em produtividade empresarial.
+PWA moderno e minimalista para interação com N8N via webhook. Substitui WhatsApp/Telegram por solução proprietária com controle total, interface otimizada e suporte multi-usuário.
 
-## Objetivo
+## Status Atual
 
-Criar PWA (Progressive Web App) que permita consultas rápidas via texto ou voz ao fluxo N8N existente, com interface moderna, responsiva e focada em uso mobile.
+**Versão:** 1.3.0
+**Status:** ✅ **EM PRODUÇÃO**
+**Deploy:** Vercel (multi-usuário)
 
 ## Stack Técnica
 
-- **HTML5** puro (estrutura)
-- **CSS3** puro (estilização moderna)
-- **JavaScript ES6+** puro (lógica e interações)
-- **PWA** (manifest + service worker)
-- **LocalStorage** (persistência de histórico)
-- **Speech Recognition API** (entrada por voz)
+- **HTML5 + CSS3 + JavaScript ES6+** puro (zero frameworks)
+- **PWA** completo (manifest + service worker)
+- **LocalStorage V2** (sessões múltiplas com migração automática)
+- **Speech Recognition API** (voz nativa)
+- **Vercel** (deploy automático via Git)
 
 ## Características
 
-- Zero frameworks/bibliotecas pesadas
-- Carregamento instantâneo
-- Funciona offline (básico)
-- Instalável na tela inicial
-- Peso total < 100KB
-- Interface estilo chat moderno
+- ✅ Zero dependências externas
+- ✅ Bundle ~40KB (carregamento < 2s)
+- ✅ Funciona offline (interface completa)
+- ✅ Instalável na tela inicial (iOS/Android)
+- ✅ Sistema de sessões múltiplas
+- ✅ Sidebar com histórico organizado
+- ✅ Timeout duplo (nunca trava)
+- ✅ Multi-usuário (1 código → N sites)
 
-## Estrutura de Pastas
+## Estrutura Real
 
 ```
 /
-├── index.html          # Página principal
+├── index.html              # Página principal
+├── manifest.json           # Config PWA
+├── sw.js                   # Service Worker (bypass N8N)
+├── config.js               # Config webhook (gitignored)
 ├── css/
-│   ├── style.css       # Estilos principais
-│   └── theme.css       # Variáveis de tema
+│   └── style.css          # Estilos completos
 ├── js/
-│   ├── app.js          # Lógica principal
-│   ├── api.js          # Comunicação com N8N
-│   ├── storage.js      # Gerenciamento LocalStorage
-│   └── speech.js       # Reconhecimento de voz
-├── manifest.json       # Configuração PWA
-├── sw.js              # Service Worker
-└── assets/
-    └── icons/         # Ícones para PWA
+│   ├── app.js             # Lógica principal e UI
+│   ├── api.js             # Comunicação N8N
+│   ├── speech.js          # Reconhecimento de voz
+│   ├── storage-v2.js      # LocalStorage V2 (sessões)
+│   └── sidebar.js         # Controle sidebar
+└── assets/icons/          # Ícones PWA
 ```
 
-## Funcionalidades V1
+## Funcionalidades Implementadas
 
-- Envio de mensagens por texto
-- Envio de mensagens por voz
-- Exibição de respostas formatadas
-- Histórico de conversas (LocalStorage)
-- Design responsivo mobile-first
-- PWA instalável
+**V1.3 (Produção):**
+- ✅ Envio por texto e voz
+- ✅ Sistema de sessões múltiplas (Storage V2)
+- ✅ Sidebar com histórico (Hoje, Ontem, 7 dias, Antigas)
+- ✅ Ícones contextuais automáticos
+- ✅ Tratamento robusto de erros com retry
+- ✅ Timeout visual de 2 minutos
+- ✅ Botão "Tentar novamente"
+- ✅ Limpeza automática de sessões antigas
+- ✅ PWA completo e instalável
+- ✅ Deploy multi-usuário
 
-## Funcionalidades V2 (Planejadas)
-
+**Planejado (V2):**
 - Atalhos rápidos customizáveis
-- Respostas formatadas por tipo (agenda, email, cliente)
-- Favoritos/pins de respostas importantes
-- Sincronização multidevice
-- Modo offline inteligente com cache
-
-## Como Rodar Local
-
-1. Clone o repositório
-2. Abra `index.html` no navegador
-3. Para HTTPS local (necessário para PWA): use Live Server ou similar
+- Respostas formatadas (cards, listas)
+- Favoritos/pins de mensagens
+- Sincronização multidevice (Supabase)
+- Dark mode
+- Push notifications (quando iOS suportar)
 
 ## Deploy
 
-**Vercel** (recomendado):
+**Recomendado:** Vercel com variáveis de ambiente
+
 ```bash
-vercel deploy
+vercel --prod
+vercel env add API_ENDPOINT production
+vercel env add USER_ID production
+vercel env add APP_NAME production
 ```
 
-Configuração automática, HTTPS incluído, deploy via Git.
+Veja `README.md` principal para guia completo de deploy multi-usuário.
+
+## Configuração
+
+1. Copie `config.example.js` para `config.js`
+2. Configure webhook N8N e USER_ID
+3. Gere ícones PWA (veja `README.md`)
+4. Deploy via Vercel
 
 ## Requisitos
 
-- Webhook N8N configurado e ativo
-- Navegador moderno com suporte a:
-  - LocalStorage
-  - Fetch API
-  - Speech Recognition (opcional, para voz)
-  - Service Workers (para PWA)
+- Webhook N8N configurado
+- Navegador moderno (Chrome, Safari, Edge)
+- HTTPS (obrigatório para PWA e Speech API)
+
+## Documentação Completa
+
+- **README.md** - Guia completo de instalação, deploy e uso
+- **CLAUDE.md** - Contexto técnico e decisões de arquitetura
+- **MULTI-USER-SETUP.md** - Guia de deploy multi-usuário
 
 ## Autor
 
-Ricardo Nilton Borges
-Projeto pessoal para otimização de fluxo de trabalho empresarial.
+**Ricardo Nilton Borges**
+Desenvolvedor Full Stack | Representante Comercial
+Projeto pessoal para produtividade empresarial

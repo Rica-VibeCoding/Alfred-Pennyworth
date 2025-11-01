@@ -78,12 +78,44 @@
       "Bash(for file in js/*.js)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__n8n-mcp__get_node_as_tool_info",
+      "WebFetch(domain:supabase.com)",
+      "mcp__supabase__*",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_894020321fc98e4a694a53dbdbf108a7550f5a43\" npx:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_894020321fc98e4a694a53dbdbf108a7550f5a43\" timeout 5 npx:*)",
+      "Bash(echo:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_extensions",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_anon_key",
+      "WebFetch(domain:databasesample.com)",
+      "mcp__supabase__apply_migration",
+      "mcp__n8n-mcp__tools_documentation",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_894020321fc98e4a694a53dbdbf108a7550f5a43\" timeout 10 npx:*)",
+      "mcp__n8n-mcp__n8n_update_partial_workflow",
+      "Bash(grep:*)",
+      "mcp__n8n-mcp__n8n_get_workflow",
+      "mcp__n8n-mcp__n8n_get_workflow_minimal",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(cd:*)",
+      "mcp__n8n-mcp__n8n_get_workflow_details",
+      "WebFetch(domain:fossies.org)",
+      "Bash(git pull:*)",
+      "Bash(test:*)",
+      "Bash(lsof:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "n8n-mcp"
+    "n8n-mcp",
+    "supabase"
   ]
 }

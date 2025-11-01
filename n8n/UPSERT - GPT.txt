@@ -1,0 +1,284 @@
+Perfeito — vou te dar **dois blocos prontos** para colar: (A) **JS** para usar no n8n (fluxo: *Prepare → HTTP Request OpenAI → Map results → Upsert Supabase*), e (B) **SQL** para criar colunas, índices e a **query híbrida** (texto + vetor) no Postgres/Supabase. Testa isso e me diz os resultados — se precisar eu ajusto.
+
+> Observações rápidas que usei como base:
+>
+> * `text-embedding-3-small` produz **vetores padrão de 1536 dimensões** (é seguro usar `vector(1536)` para essa configuração). ([OpenAI][1])
+> * No pgvector o operador de distância **`<->`** é usado para ordenar por proximidade (menor = mais próximo). ([GitHub][2])
+> * Para índices aproximados você pode usar `ivfflat` ou `hnsw` com as operator classes (`vector_l2_ops`, `vector_cosine_ops`, etc.). ([Supabase][3])
+
+---
+
+# A) JS — n8n (Function / Function Item nodes + HTTP Request)
+
+Vou supor que seu input (do Google Contacts) tem campos JSON como `id`, `nome_completo`, `apelido`, `telefone`, `email`.
+Fluxo sugerido:
+
+1. **Function (PrepareBatch)** — cria `batchInputs` (2 por contato: `name` and `full`) e um `mapping`.
+2. **HTTP Request (OpenAI Embeddings)** — POST para `https://api.openai.com/v1/embeddings` com `model: "text-embedding-3-small"` e `input: batchInputs`.
+3. **Function (MapEmbeddings)** — pega a resposta do OpenAI e monta payloads para upsert no Supabase (inclui `nome_normalized`, `apelido_normalized`, `embedding_name`, `embedding_full`).
+4. **HTTP Request (Supabase Upsert)** — upsert na tabela `contacts`.
+
+## 1) Function (PrepareBatch) — cole no node “Function” do n8n
+
+```js
+// PrepareBatch (n8n Function) - gera batchInputs e mapping
+// Entrada: items (cada item.json é um contato com id, nome_completo, apelido, telefone, email)
+const items = $input.all();
+
+const batchInputs = [];   // array de strings que vamos enviar para OpenAI
+const mapping = [];       // map para remontar os embeddings no final
+
+for (const it of items) {
+  const c = it.json;
+  const id = c.id ?? c.contact_id ?? null;
+  const nome = (c.nome_completo || '').trim();
+  const apelido = (c.apelido || '').trim();
+
+  // short embedding only nome + apelido (melhora recall por apelido/primeiro nome)
+  const short = `Nome: ${nome}${apelido ? ` | Apelido: ${apelido}` : ''}`;
+
+  // full embedding com mais metadados (telefone, email) para contexto/rerank
+  const parts = [
+    `Nome: ${nome}`,
+    apelido ? `Apelido: ${apelido}` : null,
+    c.telefone ? `Telefone: ${c.telefone}` : null,
+    c.email ? `Email: ${c.email}` : null
+  ].filter(Boolean);
+  const full = parts.join(' | ');
+
+  // push in batch (mantemos ordem: name then full)
+  const idxName = batchInputs.push(short) - 1;
+  const idxFull = batchInputs.push(full) - 1;
+
+  mapping.push({ contactId: id, idxName, idxFull, nome, apelido });
+}
+
+// Retorna um único item com batchInputs e mapping (facilitar uso no HTTP Request)
+return [{
+  json: {
+    batchInputs,
+    mapping
+  }
+}];
+```
+
+## 2) HTTP Request (OpenAI Embeddings)
+
+Configure um node HTTP Request (POST) com:
+
+* URL: `https://api.openai.com/v1/embeddings`
+* Headers:
+
+  * `Authorization: Bearer {{ $env.OPENAI_API_KEY }}` (ou use credenciais do n8n)
+  * `Content-Type: application/json`
+* Body (raw JSON) — no campo do corpo coloque (usando expressão para pegar `batchInputs` do nó anterior):
+
+```json
+{
+  "model": "text-embedding-3-small",
+  "input": {{$json["batchInputs"]}}
+}
+```
+
+> No n8n configure para enviar o body como **raw JSON** e **usar saída do nó anterior** (expressão). Se preferir, defina `OPENAI_API_KEY` como credencial do n8n e use as credenciais do HTTP node.
+
+## 3) Function (MapEmbeddings) — mapeia resposta do OpenAI para payload do Supabase
+
+Cole este script em um node Function que receba a resposta do HTTP Request (a resposta do OpenAI estará em `items[0].json.data`):
+
+```js
+// MapEmbeddings (n8n Function)
+// Assume: this node tem duas entradas:
+//  - Input 0: prepareBatch (com mapping e batchInputs)  -> $input.item(0).json
+//  - Input 1: openai response (com data: [{embedding: [...]} ...]) -> $input.item(1).json
+
+const prepare = $input.item(0).json;
+const openai = $input.item(1).json; // a body retornada pelo HTTP Request
+const mapping = prepare.mapping;
+const embeddingsData = openai.data; // array de {embedding: [...], index: N, ...}
+
+// Helper: converte array JS para formato texto JSON ou Postgres array se quiser
+function toPgVectorArray(arr) {
+  // transforma em string '[x,y,z]' - para uso em SQL param ou inserir via supabase client como JSON
+  return arr;
+}
+
+// Vamos montar payloads prontos para upsert (um por contato)
+const outputs = [];
+
+for (const m of mapping) {
+  const embName = embeddingsData[m.idxName].embedding;
+  const embFull = embeddingsData[m.idxFull].embedding;
+
+  // normalizações simples
+  const nome_normalized = (m.nome || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  const apelido_normalized = (m.apelido || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+
+  outputs.push({
+    json: {
+      id: m.contactId,
+      nome: m.nome,
+      apelido: m.apelido,
+      nome_normalized,
+      apelido_normalized,
+      // salve embeddings como arrays JSON (o supabase JS aceita arrays)
+      embedding_name: embName,
+      embedding_full: embFull
+    }
+  });
+}
+
+// Retorna uma lista de itens prontos para o node HTTP (Supabase) que fará o UPSERT
+return outputs;
+```
+
+## 4) HTTP Request (Supabase Upsert)
+
+* Método: POST (ou use o client supabase). Endpoint: `https://<your-project>.supabase.co/rest/v1/contacts` (ou use RPC)
+* Headers:
+
+  * `apikey: <service_role_key>` (ou Authorization)
+  * `Content-Type: application/json`
+* Body: envie o array retornado pelo Function `MapEmbeddings` como JSON. Use `ON CONFLICT` dependendo do método (se usar REST, Supabase REST tem `upsert=true` query param).
+
+Exemplo via REST (n8n HTTP Request):
+
+* URL: `https://<proj>.supabase.co/rest/v1/contacts?upsert=true`
+* Body: `{{$json}}` (envia cada item por request, ou envie em lote se seu node suportar)
+
+> Dica: se preferir, use o client Supabase em uma Edge Function/Serverless — facilita operações em lote e segurança (service_role).
+
+---
+
+# B) SQL — criar colunas, índices, normalização e query híbrida
+
+## 1) Preparar extensões e colunas
+
+```sql
+-- habilitar extensões necessárias
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- adicionar colunas (ajuste nomes/tipos conforme seu schema)
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS embedding_name vector(1536),
+  ADD COLUMN IF NOT EXISTS embedding_full vector(1536),
+  ADD COLUMN IF NOT EXISTS nome_normalized text,
+  ADD COLUMN IF NOT EXISTS apelido_normalized text;
+```
+
+## 2) Índices textuais (trigram) e vetoriais (ivfflat/hnsw)
+
+```sql
+-- índices trigram para fuzzy substring/similarity (ótimo para buscas por "dani")
+CREATE INDEX IF NOT EXISTS idx_contacts_nome_trgm ON contacts USING gin (nome_normalized gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_contacts_apelido_trgm ON contacts USING gin (apelido_normalized gin_trgm_ops);
+
+-- índice vetorial: escolha ivfflat (bom para muitos dados) ou hnsw (melhor recall, maior memória)
+-- EXEMPLO ivfflat com L2 (crie depois de popular a tabela para treinar centroids)
+CREATE INDEX IF NOT EXISTS idx_contacts_emb_name_ivf ON contacts USING ivfflat (embedding_name vector_l2_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_contacts_emb_full_ivf ON contacts USING ivfflat (embedding_full vector_l2_ops) WITH (lists = 100);
+
+-- alternativa: HNSW (bom recall, insere sem fase de treino)
+-- CREATE INDEX IF NOT EXISTS idx_contacts_emb_name_hnsw ON contacts USING hnsw (embedding_name vector_l2_ops) WITH (m = 16, ef_construction = 64);
+```
+
+> Ajuste `lists` para `rows/1000` como regra inicial (para 1.700 linhas `lists = 2` é suficiente; porém IVFFlat precisa de alguns dados antes de construir — HNSW é mais simples para datasets menores).
+
+## 3) Trigger para manter colunas normalizadas (opcional, mas recomendado)
+
+```sql
+CREATE OR REPLACE FUNCTION contacts_normalize_trigger() RETURNS trigger AS $$
+BEGIN
+  NEW.nome_normalized := lower(unaccent(coalesce(NEW.nome, '')));
+  NEW.apelido_normalized := lower(unaccent(coalesce(NEW.apelido, '')));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_contacts_normalize
+BEFORE INSERT OR UPDATE ON contacts
+FOR EACH ROW EXECUTE FUNCTION contacts_normalize_trigger();
+```
+
+## 4) Upsert exemplo (se usar SQL direto)
+
+```sql
+-- exemplo de upsert (caso use insert via SQL)
+INSERT INTO contacts (id, nome, apelido, nome_normalized, apelido_normalized, embedding_name, embedding_full)
+VALUES
+  (:id, :nome, :apelido, lower(unaccent(:nome)), lower(unaccent(:apelido)), :embedding_name::vector, :embedding_full::vector)
+ON CONFLICT (id) DO UPDATE SET
+  nome = EXCLUDED.nome,
+  apelido = EXCLUDED.apelido,
+  nome_normalized = EXCLUDED.nome_normalized,
+  apelido_normalized = EXCLUDED.apelido_normalized,
+  embedding_name = EXCLUDED.embedding_name,
+  embedding_full = EXCLUDED.embedding_full;
+```
+
+> `:embedding_name` deve ser enviado como um array/JSON que o client converte. No psql você pode usar `'\[0.1,0.2, ...\]'::vector` ou passar via client (supabase-js aceita arrays).
+
+## 5) Query híbrida (texto exato/fuzzy *prioritário* + busca vetorial)
+
+Essa query first pega matches textuais (substring / fuzzy) e depois preenche com resultados vetoriais ordenados por distância. Substitua `$1` por o embedding do query (vector) e `$2` pelo texto buscado normalizado (ex: `'dani'`).
+
+```sql
+WITH q AS (
+  SELECT
+    $1::vector AS q_embedding,
+    lower(unaccent($2::text)) AS q_text
+),
+
+text_matches AS (
+  SELECT id, nome, apelido, 0.0 AS distance, 1 AS priority
+  FROM contacts
+  WHERE nome_normalized ILIKE '%' || (SELECT q_text FROM q) || '%'
+     OR apelido_normalized ILIKE '%' || (SELECT q_text FROM q) || '%'
+),
+
+vector_matches AS (
+  SELECT id, nome, apelido, embedding_name <-> (SELECT q_embedding FROM q) AS distance, 0 AS priority
+  FROM contacts
+  ORDER BY embedding_name <-> (SELECT q_embedding FROM q)
+  LIMIT 50
+)
+
+SELECT id, nome, apelido, distance, priority
+FROM (
+  SELECT * FROM text_matches
+  UNION ALL
+  SELECT * FROM vector_matches
+) combined
+ORDER BY priority DESC, distance ASC
+LIMIT 20;
+```
+
+**Como usar na prática**
+
+1. Gere `q_embedding` chamando a API de embeddings com o texto da query (ex.: `"Dani"`). Use o mesmo modelo (`text-embedding-3-small`) para consistência.
+2. Passe `q_embedding` como parâmetro `$1` e a query normalizada como `$2` (`'dani'`).
+3. Essa query vai trazer primeiro matches textuais (priority=1), depois preencher com resultados vetoriais ordenados por distancia.
+
+---
+
+# Resumo / por que isso resolve seu problema
+
+* Você estava gerando **apenas um embedding** com vários campos — isso pode *diluir* o sinal do nome curto (como "Dani"). Criando **embedding_name** só com nome/apelido você foca o espaço vetorial justamente no que a pessoa pesquisa quando pede “Dani”.
+* A **busca híbrida** (textual fuzível + vetorial) captura tanto correspondências exatas/substrings quanto similaridade semântica. Para nomes curtos, a correspondência textual costuma ganhar (prioritária), evitando trazer só "Daniel" ou "Daiane".
+* `text-embedding-3-small` está OK pra 1.700 contatos; trocar para `-large` pode ajudar nuances, mas costará mais e talvez nem resolva o problema sem essa reestruturação. ([OpenAI][1])
+
+---
+
+Se quiser eu já:
+
+* ajusto o script para o exato formato JSON do seu `UPSERT-v4.json` (você mandou aquele arquivo antes — posso adaptar direto nele), **ou**
+* te mando a versão pronta do node HTTP (OpenAI) + exemplos de payload para o Supabase REST, ou
+* gero uma rotina SQL que atualiza **todos** os seus 1700 contatos em lote (caso queira rodar uma migração única).
+
+Qual prefere que eu já gere agora? (se quiser o ajuste direto no `UPSERT-v4.json` eu adapto o JS para os campos exatos que você usa).
+
+[1]: https://openai.com/index/new-embedding-models-and-api-updates/?utm_source=chatgpt.com "New embedding models and API updates"
+[2]: https://github.com/pgvector/pgvector?utm_source=chatgpt.com "pgvector/pgvector: Open-source vector similarity search for ..."
+[3]: https://supabase.com/docs/guides/ai/vector-indexes/ivf-indexes?utm_source=chatgpt.com "IVFFlat indexes | Supabase Docs"

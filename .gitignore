@@ -1,4 +1,7 @@
 # Config with sensitive data
+config.js
+config.development.js
+config-dev-proxy.js
 
 
 # Node modules (if any)
@@ -26,3 +29,6 @@ npm-debug.log*
 
 # Vercel
 .vercel
+
+# N8N workflows com credenciais/API keys
+n8n/fluxos/

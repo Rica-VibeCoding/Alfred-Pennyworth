@@ -155,7 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const responseType = result.data.type || 'generic';
         const metadata = result.data.metadata || {};
 
-        addMessage(responseText, 'received');
+        // Passar tipo de card para renderização
+        const cardType = responseType.startsWith('card_') ? responseType : null;
+        addMessage(responseText, 'received', cardType, metadata);
+
         Storage.saveMessage(responseText, 'assistant', responseType, metadata);
         lastFailedMessage = null; // Limpa retry em caso de sucesso
 
@@ -180,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function addMessage(text, type) {
+  function addMessage(text, type, cardType = null, metadata = null) {
     updateEmptyState();
 
     const messageDiv = document.createElement('div');
@@ -188,7 +191,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
-    bubble.textContent = text || ''; // textContent is XSS-safe
+
+    // Renderizar card se tipo definido, senão texto
+    if (cardType && typeof Cards !== 'undefined') {
+      const cardData = metadata?.card_data || {};
+      const cardElement = Cards.renderCard(cardType, cardData, text);
+      bubble.appendChild(cardElement);
+    } else {
+      bubble.textContent = text || ''; // textContent is XSS-safe
+    }
 
     const timestamp = document.createElement('div');
     timestamp.className = 'message-timestamp';
@@ -300,17 +311,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const messageType = msg.role === 'user' ? 'sent' : 'received';
-      addMessageFromHistory(msg.content, messageType, msg.timestamp);
+      const cardType = msg.type?.startsWith('card_') ? msg.type : null;
+      const metadata = msg.metadata || null;
+
+      addMessageFromHistory(msg.content, messageType, msg.timestamp, cardType, metadata);
     });
   }
 
-  function addMessageFromHistory(text, type, timestamp) {
+  function addMessageFromHistory(text, type, timestamp, cardType = null, metadata = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}`;
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
-    bubble.textContent = text || ''; // textContent is XSS-safe
+
+    // Renderizar card se tipo definido, senão texto
+    if (cardType && typeof Cards !== 'undefined') {
+      const cardData = metadata?.card_data || {};
+      const cardElement = Cards.renderCard(cardType, cardData, text);
+      bubble.appendChild(cardElement);
+    } else {
+      bubble.textContent = text || ''; // textContent is XSS-safe
+    }
 
     const timestampDiv = document.createElement('div');
     timestampDiv.className = 'message-timestamp';

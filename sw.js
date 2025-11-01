@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'alfred-v1.2.5';
+const CACHE_VERSION = 'alfred-v1.3.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -6,11 +6,14 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/css/style.css',
+  '/css/cards.css',
+  '/js/url-check.js',
   '/js/app.js',
   '/js/api.js',
   '/js/speech.js',
   '/js/storage-v2.js',
   '/js/sidebar.js',
+  '/js/cards.js',
   '/config.js',
   '/manifest.json'
 ];
